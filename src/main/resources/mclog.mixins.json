@@ -1,0 +1,19 @@
+{
+  "required": true,
+  "minVersion": "0.8",
+  "package": "cn.acyco.mclog.mixin",
+  "compatibilityLevel": "JAVA_16",
+  "mixins": [
+    "BlockItemMixin",
+    "MinecraftServerMixin",
+    "PlayerManagerMixin",
+    "ServerPlayerEntityMixin",
+    "ServerPlayerInteractionManagerMixin"
+  ],
+  "client": [
+
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}

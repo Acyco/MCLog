@@ -10,6 +10,6 @@ public class ConfigData {
 
     // Database
     public String databaseFile = "mclog.db";
-    public String prefix = "mclog";
+    public String prefix = "mclog_";
 
 }

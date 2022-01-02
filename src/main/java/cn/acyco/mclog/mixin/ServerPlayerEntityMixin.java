@@ -25,10 +25,16 @@ public abstract class ServerPlayerEntityMixin extends LivingEntity {
     }
 
 
-    @Inject(method = "onDeath", at = @At("HEAD"    ))
+    @Inject(method = "onDeath", at = @At("HEAD"))
 
     private void onDeath(DamageSource source, CallbackInfo ci) {
         MCLogCore.onDeath(source, ci, (ServerPlayerEntity)(Object) this);
+    }
+
+    @Inject(method = "onDisconnect", at = @At("HEAD"))
+
+    private void onDisconnect(CallbackInfo ci) {
+        MCLogCore.onDisconnect(ci, (ServerPlayerEntity) (Object) this);
     }
 }
 

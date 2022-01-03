@@ -2,11 +2,13 @@ package cn.acyco.mclog;
 
 import cn.acyco.mclog.config.Config;
 import cn.acyco.mclog.database.SqliteHelper;
+import cn.acyco.mclog.ext.BlockItemExt;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
-import net.minecraft.entity.Entity;
 import net.minecraft.entity.damage.DamageSource;
 import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.item.BlockItem;
+import net.minecraft.item.Item;
 import net.minecraft.item.ItemPlacementContext;
 import net.minecraft.network.ClientConnection;
 import net.minecraft.server.MinecraftServer;
@@ -183,14 +185,35 @@ public class MCLogCore {
 
     }
 
+    public static boolean isWaterlogged(BlockState blockState) {
+        for (Map.Entry<Property<?>, Comparable<?>> entry : blockState.getEntries().entrySet()) {
+            System.out.println(entry.getKey().getName());
+            if (entry.getKey().getName().equals("waterlogged") && entry.getValue().toString().equals("true")) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     /**
      * 方块放置事件
      * @param context
+     * @param blockItem
      */
-    public static void onBlockPlace(ItemPlacementContext context) {
+    public static void onBlockPlace(ItemPlacementContext context, BlockItem blockItem) {
         if (!context.getWorld().isClient) {
             BlockPos blockPos = context.getBlockPos();
             BlockState blockState = context.getWorld().getBlockState(blockPos);
+
+            BlockItemExt blockItemExt = (BlockItemExt) blockItem;
+            BlockState beforeState = blockItemExt.getBeforeState();
+            System.out.println(beforeState.getFluidState().getFluid());
+            if (!beforeState.getFluidState().isEmpty()&&!isWaterlogged(blockState)) { // 放置前的方块是流体，放置后不是含水，
+                //System.out.println("remove fluid");
+                onBlockBroken((ServerPlayerEntity) context.getPlayer(), blockPos, beforeState, (ServerWorld) context.getWorld());
+            }
+
+
             LinkedHashMap<String, Object> map = new LinkedHashMap<>();
             map.put("time", (int) (new Date().getTime() / 1000));
             map.put("uid", getUserId(context.getPlayer()));

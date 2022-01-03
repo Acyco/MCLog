@@ -2,6 +2,7 @@ package cn.acyco.mclog.database;
 
 import cn.acyco.mclog.MCLogCore;
 import cn.acyco.mclog.config.ConfigData;
+import it.unimi.dsi.fastutil.Hash;
 
 import java.io.File;
 import java.sql.Connection;
@@ -12,6 +13,8 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 /**
  * @author Acyco
@@ -24,6 +27,8 @@ public class SqliteHelper {
     ;
     public static String prefix = configData.prefix;
     public static String tableNameBlock = prefix + "block";
+    public static String tableNameBlockMap = prefix + "block_map";
+    public static String tableNameBlockStateMap = prefix + "block_state_map";
     public static String tableNameDeath = prefix + "death";
     public static String tableNameSesssion = prefix + "session";
     public static String tableNameUser = prefix + "user";
@@ -45,7 +50,6 @@ public class SqliteHelper {
 
 
     public static void createTables() {
-        MCLogCore.LOGGER.debug("create database!!!");
 
         Connection connection = SqliteHelper.getConnection();
 
@@ -54,7 +58,9 @@ public class SqliteHelper {
         }
         try (Statement statement = connection.createStatement()) {
 
-            statement.executeUpdate("CREATE TABLE IF NOT EXISTS " + tableNameBlock + " (time INTEGER, user INTEGER, wid INTEGER, x INTEGER, y INTEGER, z INTEGER, type INTEGER, data INTEGER,action INTEGER);");
+            statement.executeUpdate("CREATE TABLE IF NOT EXISTS " + tableNameBlock + " (time INTEGER, uid INTEGER, wid INTEGER, x INTEGER, y INTEGER, z INTEGER, bid INTEGER, sid BLOB, action INTEGER,rolled_back INTEGER);");
+            statement.executeUpdate("CREATE TABLE IF NOT EXISTS " + tableNameBlockMap + " (id INTEGER PRIMARY KEY ASC,block TEXT);");
+            statement.executeUpdate("CREATE TABLE IF NOT EXISTS " + tableNameBlockStateMap + " (id INTEGER PRIMARY KEY ASC,state TEXT);");
             statement.executeUpdate("CREATE TABLE IF NOT EXISTS " + tableNameDeath + " (time INTEGER, uid INTEGER, wid INTEGER, x INTEGER, y INTEGER, z INTEGER, msg TEXT,attacker TEXT);");
 
             statement.executeUpdate("CREATE TABLE IF NOT EXISTS " + tableNameUser + " (id INTEGER PRIMARY KEY ASC, time INTEGER, user TEXT, uuid TEXT);"); // user
@@ -66,18 +72,18 @@ public class SqliteHelper {
         }
     }
 
-    public static HashMap<String, Integer> getWorldMap() {
-        String query = "SELECT id,world FROM " + tableNameWorld;
+
+    public static HashMap<String, Integer> getDataMap(String tableName, String key) {
+        String query = "SELECT id," + key+ " FROM " + tableName;
         HashMap<String, Integer> map = new HashMap<>();
         try (
                 PreparedStatement preparedStatement = getConnection().prepareStatement(query);
                 ResultSet rs = preparedStatement.executeQuery();
         ) {
-
             while (rs.next()) {
-                String world = rs.getString("world");
-                if (!map.containsKey(world)) {
-                    map.put(world, rs.getInt("id"));
+                String keyStr = rs.getString(key);
+                if (!map.containsKey(keyStr)) {
+                    map.put(keyStr, rs.getInt("id"));
                 }
             }
             return map;
@@ -85,87 +91,32 @@ public class SqliteHelper {
             e.printStackTrace();
             return new HashMap<>();
         }
-
     }
 
-    public static HashMap<String, Integer> getUserMap() {
-        String query = "SELECT id,user FROM " + tableNameUser;
-        HashMap<String, Integer> map = new HashMap<>();
-        try (
-                PreparedStatement preparedStatement = getConnection().prepareStatement(query);
-                ResultSet rs = preparedStatement.executeQuery();
-        ) {
-            while (rs.next()) {
-                String world = rs.getString("user");
-                if (!map.containsKey(world)) {
-                    map.put(world, rs.getInt("id"));
-                }
-            }
-            return map;
-        } catch (SQLException e) {
-            e.printStackTrace();
-            return new HashMap<>();
-        }
-
-    }
-
-
-    public static void insertWorld(String world) {
-        MCLogCore.LOGGER.debug(" insert world");
-        if (!MCLogCore.WORLDS.containsKey(world)) {
-            String sql = "INSERT INTO " + tableNameWorld + " (world) VALUES (?)";
-            try (PreparedStatement statement = connection.prepareStatement(sql)) {
-                statement.setString(1, world);
-                statement.executeUpdate();
-            } catch (SQLException e) {
-                e.printStackTrace();
+    public static void insert(String tableName , LinkedHashMap<String,Object> map) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("INSERT INTO ").append(tableName).append(" (");
+        int size = map.keySet().size();
+        int current = 0;
+        StringBuilder  qm = new StringBuilder();
+        for (String key : map.keySet()) {
+            current++;
+            sb.append(key);
+            qm.append("?");
+            if (size > current) {
+                sb.append(",");
+                qm.append(",");
             }
         }
-    }
-
-    public static void insertUser(String user, String uuid) {
-        MCLogCore.LOGGER.debug("insert user");
-        if (!MCLogCore.USERS.containsKey(user)) {
-            String sql = "INSERT INTO " + tableNameUser + " (time,user,uuid) VALUES (?,?,?)";
-            try (PreparedStatement statement = connection.prepareStatement(sql)) {
-                statement.setInt(1, (int) (new Date().getTime() / 1000));
-                statement.setString(2, user);
-                statement.setString(3, uuid);
-                statement.executeUpdate();
-            } catch (SQLException e) {
-                e.printStackTrace();
+        sb.append(") VALUES (");
+        sb.append(qm);
+        sb.append(")");
+        try (PreparedStatement statement = connection.prepareStatement(sb.toString())) {
+            int cu = 0;
+            for (Map.Entry<String, Object> entry : map.entrySet()) {
+                cu++;
+                statement.setObject(cu, entry.getValue());
             }
-        }
-    }
-
-    public static void insertSession(int uid, int wid, int x, int y, int z, int action) {
-        MCLogCore.LOGGER.debug("insert session");
-        String sql = "INSERT INTO " + tableNameSesssion + " (time,uid,wid,x,y,z,action) VALUES (?,?,?,?,?,?,?)";
-        try (PreparedStatement statement = connection.prepareStatement(sql)) {
-            statement.setInt(1, (int) (new Date().getTime() / 1000));
-            statement.setInt(2, uid);
-            statement.setInt(3, wid);
-            statement.setInt(4, x);
-            statement.setInt(5, y);
-            statement.setInt(6, z);
-            statement.setInt(7, action); // action 1登录 0 退出
-            statement.executeUpdate();
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-    }
-
-    public static void insertDeath(int uid, int wid, int x, int y, int z, String msg, String attacker) {
-        String sql = "INSERT INTO " + tableNameDeath + " (time,uid,wid,x,y,z,msg,attacker) VALUES (?,?,?,?,?,?,?,?)";
-        try (PreparedStatement statement = connection.prepareStatement(sql)) {
-            statement.setInt(1, (int) (new Date().getTime() / 1000));
-            statement.setInt(2, uid);
-            statement.setInt(3, wid);
-            statement.setInt(4, x);
-            statement.setInt(5, y);
-            statement.setInt(6, z);
-            statement.setString(7, msg);
-            statement.setString(8, attacker);
             statement.executeUpdate();
         } catch (SQLException e) {
             e.printStackTrace();

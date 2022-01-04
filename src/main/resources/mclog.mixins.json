@@ -5,6 +5,7 @@
   "compatibilityLevel": "JAVA_16",
   "mixins": [
     "BlockItemMixin",
+    "BucketItemMixin",
     "MinecraftServerMixin",
     "PlayerManagerMixin",
     "ServerPlayerEntityMixin",

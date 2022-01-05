@@ -2,7 +2,6 @@ package cn.acyco.mclog.database;
 
 import cn.acyco.mclog.MCLogCore;
 import cn.acyco.mclog.config.ConfigData;
-import it.unimi.dsi.fastutil.Hash;
 
 import java.io.File;
 import java.sql.Connection;
@@ -11,7 +10,6 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;

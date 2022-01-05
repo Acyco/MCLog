@@ -15,6 +15,7 @@ import net.minecraft.item.BlockItem;
 import net.minecraft.item.BucketItem;
 import net.minecraft.item.ItemPlacementContext;
 import net.minecraft.item.ItemStack;
+import net.minecraft.item.Items;
 import net.minecraft.network.ClientConnection;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.network.ServerPlayerEntity;
@@ -82,6 +83,16 @@ public class MCLogCore {
 
     public static File getPathFile(String name) {
         return server.getSavePath(WorldSavePath.ROOT).resolve(name).toFile();
+    }
+
+    public static boolean isWaterlogged(BlockState blockState) {
+        for (Map.Entry<Property<?>, Comparable<?>> entry : blockState.getEntries().entrySet()) {
+            //System.out.println(entry.getKey().getName()+',' + entry.getValue());
+            if (entry.getKey().getName().equals("waterlogged") && entry.getValue().toString().equals("true")) {
+                return true;
+            }
+        }
+        return false;
     }
 
 
@@ -164,13 +175,13 @@ public class MCLogCore {
     }
 
     /**
-     * 死亡事件
+     * 玩家死亡事件
      *
      * @param source
      * @param ci
      * @param player
      */
-    public static void onDeath(DamageSource source, CallbackInfo ci, ServerPlayerEntity player) {
+    public static void onPlayerDeath(DamageSource source, CallbackInfo ci, ServerPlayerEntity player) {
 
         LinkedHashMap<String, Object> map = new LinkedHashMap<>();
         map.put("time", (int) (new Date().getTime() / 1000));
@@ -183,8 +194,13 @@ public class MCLogCore {
         map.put("attacker", source.getAttacker() == null ? "" : source.getAttacker().toString());
         SqliteHelper.insert(SqliteHelper.tableNameDeath, map);
         for (ItemStack itemStack : player.getInventory().main) {
-            System.out.println(itemStack);
+            if (itemStack.getItem() != Items.AIR) {
+                System.out.println(itemStack.getItem().getTranslationKey());
+                System.out.println(itemStack.getCount());
+
+            }
         }
+
     }
 
 
@@ -212,15 +228,6 @@ public class MCLogCore {
 
     }
 
-    public static boolean isWaterlogged(BlockState blockState) {
-        for (Map.Entry<Property<?>, Comparable<?>> entry : blockState.getEntries().entrySet()) {
-            //System.out.println(entry.getKey().getName()+',' + entry.getValue());
-            if (entry.getKey().getName().equals("waterlogged") && entry.getValue().toString().equals("true")) {
-                return true;
-            }
-        }
-        return false;
-    }
 
     /**
      * 方块放置事件
@@ -235,11 +242,15 @@ public class MCLogCore {
 
             BlockItemExt blockItemExt = (BlockItemExt) blockItem;
             BlockState beforeState = blockItemExt.getBeforeState();
-            //System.out.println(beforeState.getFluidState().getFluid());
-            if (!beforeState.getFluidState().isEmpty() && !isWaterlogged(blockState)) { // 放置前的方块是流体，放置后不是含水，
-                //System.out.println("remove fluid");
-                onBlockBroken((ServerPlayerEntity) context.getPlayer(), blockPos, beforeState, (ServerWorld) context.getWorld());
+            if (beforeState != null) {
+                //System.out.println(beforeState.getFluidState().getFluid());
+                if (!beforeState.getFluidState().isEmpty() && !isWaterlogged(blockState)) { // 放置前的方块是流体，放置后不是含水，
+                    //System.out.println("remove fluid");
+                    onBlockBroken((ServerPlayerEntity) context.getPlayer(), blockPos, beforeState, (ServerWorld) context.getWorld());
+                    blockItemExt.setBeforeState(null); //处理完重置为null
+                }
             }
+
 
 
             LinkedHashMap<String, Object> map = new LinkedHashMap<>();
@@ -297,7 +308,7 @@ public class MCLogCore {
         SqliteHelper.insert(SqliteHelper.tableNameSesssion, map);
     }
 
-    private static BlockHitResult raycast(Fluid fluid, World world, PlayerEntity player, RaycastContext.FluidHandling fluidHandling) {
+    private static BlockHitResult raycast( World world, PlayerEntity player, RaycastContext.FluidHandling fluidHandling) {
         float f = player.getPitch();
         float g = player.getYaw();
         Vec3d vec3d = player.getEyePos();
@@ -310,7 +321,7 @@ public class MCLogCore {
         float n = h * j;
         double d = 5.0;
         Vec3d vec3d2 = vec3d.add((double) l * 5.0, (double) m * 5.0, (double) n * 5.0);
-        return world.raycast(new RaycastContext(vec3d, vec3d2, RaycastContext.ShapeType.OUTLINE, fluid == Fluids.EMPTY ? RaycastContext.FluidHandling.SOURCE_ONLY : RaycastContext.FluidHandling.NONE, player));
+        return world.raycast(new RaycastContext(vec3d, vec3d2, RaycastContext.ShapeType.OUTLINE, fluidHandling, player));
     }
 
     public static void OnBucketUse(BucketItem bucketItem, World world, PlayerEntity user, Hand hand) {
@@ -318,7 +329,8 @@ public class MCLogCore {
             BucketItemExt bucketItemExt = (BucketItemExt) bucketItem;
             Fluid fluid = bucketItemExt.getFluid();
             ItemStack itemStack = user.getStackInHand(hand);
-            BlockHitResult blockHitResult = raycast(fluid, world, user, fluid == Fluids.EMPTY ? RaycastContext.FluidHandling.SOURCE_ONLY : RaycastContext.FluidHandling.NONE);
+            RaycastContext.FluidHandling fluidHandling = fluid == Fluids.EMPTY ? RaycastContext.FluidHandling.SOURCE_ONLY : RaycastContext.FluidHandling.NONE;
+            BlockHitResult blockHitResult = raycast(world, user, fluidHandling);
             if (blockHitResult.getType() == HitResult.Type.BLOCK) {
                 BlockPos fluidDrainable;
                 BlockPos blockPos = blockHitResult.getBlockPos();

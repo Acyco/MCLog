@@ -356,4 +356,33 @@ public class MCLogCore {
         }
 
     }
+
+    public static void inventoryUpdate(PlayerEntity player, ItemStack beforeItemStack, ItemStack afterItemStack, BlockPos blockPos) {
+        if(beforeItemStack == null || afterItemStack == null) return;
+        if(beforeItemStack.isEmpty()&& afterItemStack.isEmpty()) return;
+        ServerPlayerEntity serverPlayer = (ServerPlayerEntity) player;
+        ServerWorld serverWorld = serverPlayer.getWorld();
+
+        int beforeCount = beforeItemStack.getCount();
+        int afterCount = afterItemStack.getCount();
+
+        if (!beforeItemStack.isEmpty() && !afterItemStack.isEmpty()) { //如果两者都是不空
+            if (afterItemStack.getItem() == beforeItemStack.getItem()) { // 前后都是同一种物品
+                if (afterCount < beforeCount) { //之后的数量比之前的还少 remove
+                    insertContainer(serverWorld, blockPos, serverPlayer, afterItemStack, beforeCount - afterCount, 2);
+                } else {
+                    //后面的数量比前面多
+                    insertContainer(serverWorld, blockPos, serverPlayer, afterItemStack, afterCount - beforeCount, 1);
+                }
+            } else {
+                insertContainer(serverWorld,blockPos,serverPlayer, beforeItemStack,beforeCount,2);
+                insertContainer(serverWorld,blockPos,serverPlayer,afterItemStack,afterCount,1);
+            }
+        }
+
+        //
+    }
+    public static void insertContainer(ServerWorld world, BlockPos blockPos, ServerPlayerEntity player, ItemStack itemStack,int num,int action ) {
+
+    }
 }

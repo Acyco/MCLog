@@ -8,8 +8,10 @@
     "BucketItemMixin",
     "MinecraftServerMixin",
     "PlayerManagerMixin",
+    "ScreenHandlerMixin",
     "ServerPlayerEntityMixin",
-    "ServerPlayerInteractionManagerMixin"
+    "ServerPlayerInteractionManagerMixin",
+    "SlotMixin"
   ],
   "client": [
 

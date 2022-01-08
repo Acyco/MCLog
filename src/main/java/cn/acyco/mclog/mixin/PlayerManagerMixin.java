@@ -26,6 +26,6 @@ public abstract class PlayerManagerMixin {
             )
     )
     private void onPlayerConnect(ClientConnection connection, ServerPlayerEntity player, CallbackInfo ci) {
-        MCLogCore.onPlayerConnect(connection, player);
+        MCLogCore.onPlayerConnect(player);
     }
 }

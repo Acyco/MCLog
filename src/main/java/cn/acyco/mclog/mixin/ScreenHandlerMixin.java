@@ -24,28 +24,36 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 @Mixin(ScreenHandler.class)
 public abstract class ScreenHandlerMixin implements ScreenHandlerExt {
     @Unique
-    private ServerPlayerEntity serverPlayer;//不能引起重复
+    private ServerPlayerEntity serverPlayer = null;
 
 
     @Inject(method = "onButtonClick", at = @At("HEAD"))
     public void onButtonClick(PlayerEntity player, int id, CallbackInfoReturnable<Boolean> cir) {
-        this.serverPlayer = (ServerPlayerEntity) player;
+        if (!player.getWorld().isClient) {
+            this.serverPlayer = (ServerPlayerEntity) player;
+        }
     }
 
 
     @Inject(method = "transferSlot", at = @At("HEAD"))
     public void transferSlot(PlayerEntity player, int id, CallbackInfoReturnable<Boolean> cir) {
-        this.serverPlayer = (ServerPlayerEntity) player;
+        if (!player.getWorld().isClient) {
+            this.serverPlayer = (ServerPlayerEntity) player;
+        }
     }
 
     @Inject(method = "onSlotClick", at = @At("HEAD"))
     public void onSlotClick(int slotIndex, int button, SlotActionType actionType, PlayerEntity player, CallbackInfo ci) {
-        this.serverPlayer = (ServerPlayerEntity) player;
+        if (!player.getWorld().isClient) {
+            this.serverPlayer = (ServerPlayerEntity) player;
+        }
     }
 
     @Inject(method = "dropInventory", at = @At("HEAD"))
     public void dropInventory(PlayerEntity player, Inventory inventory, CallbackInfo ci) {
-        this.serverPlayer = (ServerPlayerEntity) player;
+        if (!player.getWorld().isClient) {
+            this.serverPlayer = (ServerPlayerEntity) player;
+        }
     }
 
 

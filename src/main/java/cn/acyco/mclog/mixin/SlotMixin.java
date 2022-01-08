@@ -47,18 +47,17 @@ public abstract class SlotMixin implements SlotExt {
     public void markDirty(CallbackInfo ci) {
         ScreenHandlerExt screenHandlerExt = (ScreenHandlerExt) screenHandler;
         PlayerEntity player = screenHandlerExt.getServerPlayer();
-        Inventory inventory = this.inventory;
-        BlockPos blockPos = null;
-        if (inventory instanceof LockableContainerBlockEntity) {
-            blockPos = ((LockableContainerBlockEntity) inventory).getPos();
+        if(player == null) return;
+        if (!player.getWorld().isClient) {
+            Inventory inventory = this.inventory;
+            BlockPos blockPos = null;
+            if (inventory instanceof LockableContainerBlockEntity) {
+                blockPos = ((LockableContainerBlockEntity) inventory).getPos();
+            }
+            if (blockPos != null) {
+                MCLogCore.inventoryUpdate(player, beforeItemStack, this.getStack().copy(), blockPos);
+            }
+            beforeItemStack = this.getStack().copy();
         }
-        if (blockPos != null &&  player!= null) {
-            MCLogCore.inventoryUpdate(player, beforeItemStack, this.getStack().copy(), blockPos);
-        }
-        beforeItemStack = this.getStack().copy();
     }
-
-
-
 }
-//http://192.168.11.200:8080/addons/zjhj_bd/h5/?#/

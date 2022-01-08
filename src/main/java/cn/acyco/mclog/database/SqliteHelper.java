@@ -27,7 +27,9 @@ public class SqliteHelper {
     public static String tableNameBlock = prefix + "block";
     public static String tableNameBlockMap = prefix + "block_map";
     public static String tableNameBlockStateMap = prefix + "block_state_map";
+    public static String tableNameContainer = prefix + "container";
     public static String tableNameDeath = prefix + "death";
+    public static String tableNameItemMap = prefix + "item_map";
     public static String tableNameSesssion = prefix + "session";
     public static String tableNameUser = prefix + "user";
     public static String tableNameWorld = prefix + "world";
@@ -59,6 +61,7 @@ public class SqliteHelper {
             statement.executeUpdate("CREATE TABLE IF NOT EXISTS " + tableNameBlock + " (time INTEGER, uid INTEGER, wid INTEGER, x INTEGER, y INTEGER, z INTEGER, bid INTEGER, sid BLOB, action INTEGER,rolled_back INTEGER);");
             statement.executeUpdate("CREATE TABLE IF NOT EXISTS " + tableNameBlockMap + " (id INTEGER PRIMARY KEY ASC,block TEXT);");
             statement.executeUpdate("CREATE TABLE IF NOT EXISTS " + tableNameBlockStateMap + " (id INTEGER PRIMARY KEY ASC,state TEXT);");
+            statement.executeUpdate("CREATE TABLE IF NOT EXISTS " + tableNameContainer + " (time INTEGER, uid INTEGER, wid INTEGER, x INTEGER, y INTEGER, z INTEGER, msg TEXT,attacker TEXT);");
             statement.executeUpdate("CREATE TABLE IF NOT EXISTS " + tableNameDeath + " (time INTEGER, uid INTEGER, wid INTEGER, x INTEGER, y INTEGER, z INTEGER, msg TEXT,attacker TEXT);");
 
             statement.executeUpdate("CREATE TABLE IF NOT EXISTS " + tableNameUser + " (id INTEGER PRIMARY KEY ASC, time INTEGER, user TEXT, uuid TEXT);"); // user

@@ -7,6 +7,8 @@ import cn.acyco.mclog.ext.BucketItemExt;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.FluidDrainable;
+import net.minecraft.block.entity.BlockEntity;
+import net.minecraft.block.entity.LockableContainerBlockEntity;
 import net.minecraft.entity.damage.DamageSource;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.fluid.Fluid;
@@ -16,8 +18,8 @@ import net.minecraft.item.BucketItem;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemPlacementContext;
 import net.minecraft.item.ItemStack;
-import net.minecraft.item.Items;
 import net.minecraft.nbt.NbtCompound;
+import net.minecraft.nbt.NbtList;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
@@ -156,9 +158,9 @@ public class MCLogCore {
             LinkedHashMap<String, Object> map = new LinkedHashMap<>();
             map.put("item", key);
             SqliteHelper.insert(SqliteHelper.tableNameItemMap, map);
-            BLOCK_MAP = SqliteHelper.getDataMap(SqliteHelper.tableNameBlockMap, "item");
+            ITEM_MAP = SqliteHelper.getDataMap(SqliteHelper.tableNameItemMap, "item");
         }
-        return BLOCK_MAP.get(key);
+        return ITEM_MAP.get(key);
     }
 
 
@@ -191,7 +193,6 @@ public class MCLogCore {
      * @param player 玩家
      */
     public static void onPlayerDeath(DamageSource source, ServerPlayerEntity player) {
-
         LinkedHashMap<String, Object> map = new LinkedHashMap<>();
         map.put("time", (int) (new Date().getTime() / 1000));
         map.put("uid", getUserId(player));
@@ -201,14 +202,8 @@ public class MCLogCore {
         map.put("z", player.getBlockZ());
         map.put("msg", player.getDamageTracker().getDeathMessage().getString());
         map.put("attacker", source.getAttacker() == null ? "" : source.getAttacker().toString());
+        map.put("inventory", player.getInventory().writeNbt(new NbtList()).asString());
         SqliteHelper.insert(SqliteHelper.tableNameDeath, map);
-        for (ItemStack itemStack : player.getInventory().main) {
-            if (itemStack.getItem() != Items.AIR) {
-                System.out.println(itemStack.getItem().getTranslationKey());
-                System.out.println(itemStack.getCount());
-
-            }
-        }
 
     }
 
@@ -233,6 +228,14 @@ public class MCLogCore {
         map.put("sid", getBlockStateId(blockState));
         map.put("action", 0); //1 broken
         map.put("rolled_back", 0);
+
+        BlockEntity blockEntity = world.getBlockEntity(pos);
+        if (blockEntity instanceof LockableContainerBlockEntity) {
+            System.out.println(blockEntity.w());
+        }
+
+        System.out.println(blockState.getBlock());
+
         SqliteHelper.insert(SqliteHelper.tableNameBlock, map);
 
     }
@@ -275,9 +278,7 @@ public class MCLogCore {
             map.put("action", 1); //1 placed
             map.put("rolled_back", 0);
             SqliteHelper.insert(SqliteHelper.tableNameBlock, map);
-
         }
-
     }
 
 
@@ -403,9 +404,11 @@ public class MCLogCore {
         map.put("x",blockPos.getX());
         map.put("y", blockPos.getY());
         map.put("z", blockPos.getZ());
+        map.put("item", getItemId(itemStack.getItem()));
+        map.put("data", itemStack.writeNbt(new NbtCompound()).asString());
         map.put("action", action);
-        System.out.println(itemStack.writeNbt(new NbtCompound()));
+        map.put("rolled_back", 0);
 
-       // SqliteHelper.insert(SqliteHelper.tableNameSesssion, map);
+         SqliteHelper.insert(SqliteHelper.tableNameContainer, map);
     }
 }

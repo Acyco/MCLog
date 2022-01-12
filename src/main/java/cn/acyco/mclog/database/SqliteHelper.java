@@ -64,7 +64,8 @@ public class SqliteHelper {
             statement.executeUpdate("CREATE TABLE IF NOT EXISTS " + tableNameContainer + " (time INTEGER, uid INTEGER, wid INTEGER, x INTEGER, y INTEGER, z INTEGER, item INTEGER,data BLOB,action INTEGER, rolled_back INTEGER);");
             statement.executeUpdate("CREATE TABLE IF NOT EXISTS " + tableNameDeath + " (time INTEGER, uid INTEGER, wid INTEGER, x INTEGER, y INTEGER, z INTEGER, msg TEXT,attacker TEXT,inventory BLOB);");
             statement.executeUpdate("CREATE TABLE IF NOT EXISTS " + tableNameItemMap + " (id INTEGER PRIMARY KEY ASC,item TEXT);");
-            statement.executeUpdate("CREATE TABLE IF NOT EXISTS " + tableNameUser + "CREATE TABLE IF NOT EXISTS " + tableNameWorld + " (id INTEGER PRIMARY KEY , world TEXT);");
+            statement.executeUpdate("CREATE TABLE IF NOT EXISTS " + tableNameUser + " (id INTEGER PRIMARY KEY ASC, time INTEGER, user TEXT, uuid TEXT);"); // user
+            statement.executeUpdate("CREATE TABLE IF NOT EXISTS " + tableNameWorld + " (id INTEGER PRIMARY KEY , world TEXT);");
             statement.executeUpdate("CREATE TABLE IF NOT EXISTS " + tableNameSesssion + " (time INTEGER,uid INTEGER,wid INTEGER,x INTEGER,y INTEGER,z INTEGER,action INTEGER);");
             statement.close();
         } catch (SQLException e) {

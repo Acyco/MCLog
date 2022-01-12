@@ -3,18 +3,14 @@ package cn.acyco.mclog;
 import cn.acyco.mclog.config.Config;
 import cn.acyco.mclog.database.SqliteHelper;
 import cn.acyco.mclog.ext.BlockItemExt;
-import cn.acyco.mclog.ext.BucketItemExt;
+import cn.acyco.mclog.ext.BucketItemBeforeExt;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
-import net.minecraft.block.FluidDrainable;
 import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.block.entity.LockableContainerBlockEntity;
 import net.minecraft.entity.damage.DamageSource;
 import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.fluid.Fluid;
-import net.minecraft.fluid.Fluids;
 import net.minecraft.item.BlockItem;
-import net.minecraft.item.BucketItem;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemPlacementContext;
 import net.minecraft.item.ItemStack;
@@ -23,16 +19,12 @@ import net.minecraft.nbt.NbtList;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
+import net.minecraft.state.property.Properties;
 import net.minecraft.state.property.Property;
 import net.minecraft.util.Hand;
 import net.minecraft.util.WorldSavePath;
-import net.minecraft.util.hit.BlockHitResult;
-import net.minecraft.util.hit.HitResult;
 import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.MathHelper;
-import net.minecraft.util.math.Vec3d;
 import net.minecraft.util.registry.Registry;
-import net.minecraft.world.RaycastContext;
 import net.minecraft.world.World;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -207,16 +199,7 @@ public class MCLogCore {
 
     }
 
-
-    /**
-     * 方块破坏事件
-     *
-     * @param player 玩家
-     * @param pos 方块位置
-     * @param blockState 方块状态
-     * @param world 世界
-     */
-    public static void onBlockBroken(ServerPlayerEntity player, BlockPos pos, BlockState blockState, ServerWorld world) {
+    public static void insertBlock(PlayerEntity player, BlockPos pos, BlockState blockState, World world, int action) {
         LinkedHashMap<String, Object> map = new LinkedHashMap<>();
         map.put("time", (int) (new Date().getTime() / 1000));
         map.put("uid", getUserId(player));
@@ -226,25 +209,63 @@ public class MCLogCore {
         map.put("z", pos.getZ());
         map.put("bid", getBlockId(blockState.getBlock()));
         map.put("sid", getBlockStateId(blockState));
-        map.put("action", 0); //1 broken
+        map.put("action", action);
         map.put("rolled_back", 0);
+        SqliteHelper.insert(SqliteHelper.tableNameBlock, map);
+    }
+
+    public static void insertContainer(BlockPos blockPos, ServerPlayerEntity player, ItemStack itemStack, int action) {
+        LinkedHashMap<String, Object> map = new LinkedHashMap<>();
+        map.put("time", (int) (new Date().getTime() / 1000));
+        map.put("uid", getUserId(player));
+        map.put("wid", getWorldId(player.getWorld()));
+        map.put("x", blockPos.getX());
+        map.put("y", blockPos.getY());
+        map.put("z", blockPos.getZ());
+        map.put("item", getItemId(itemStack.getItem()));
+        map.put("data", itemStack.writeNbt(new NbtCompound()).asString());
+        map.put("action", action);
+        map.put("rolled_back", 0);
+
+        SqliteHelper.insert(SqliteHelper.tableNameContainer, map);
+    }
+
+    public static void insertSession(ServerPlayerEntity player, int action) {
+        LinkedHashMap<String, Object> map = new LinkedHashMap<>();
+        map.put("time", (int) (new Date().getTime() / 1000));
+        map.put("uid", getUserId(player));
+        map.put("wid", getWorldId(player.getWorld()));
+        map.put("x", player.getBlockX());
+        map.put("y", player.getBlockY());
+        map.put("z", player.getBlockZ());
+        map.put("action", action);
+
+        SqliteHelper.insert(SqliteHelper.tableNameSesssion, map);
+    }
+
+    /**
+     * 方块破坏事件
+     *
+     * @param player     玩家
+     * @param pos        方块位置
+     * @param blockState 方块状态
+     * @param world      世界
+     */
+    public static void onBlockBroken(ServerPlayerEntity player, BlockPos pos, BlockState blockState, ServerWorld world) {
+        insertBlock(player, pos, blockState, world, 0);// action 0 broke
 
         BlockEntity blockEntity = world.getBlockEntity(pos);
         if (blockEntity instanceof LockableContainerBlockEntity) {
-            System.out.println(blockEntity.w());
+            //System.out.println(blockEntity.);
         }
-
         System.out.println(blockState.getBlock());
-
-        SqliteHelper.insert(SqliteHelper.tableNameBlock, map);
-
     }
 
 
     /**
      * 方块放置事件
      *
-     * @param context 上下文
+     * @param context   上下文
      * @param blockItem 手里的方块物品。。
      */
     public static void onBlockPlace(ItemPlacementContext context, BlockItem blockItem) {
@@ -252,32 +273,17 @@ public class MCLogCore {
             BlockPos blockPos = context.getBlockPos();
             BlockState blockState = context.getWorld().getBlockState(blockPos);
             PlayerEntity player = context.getPlayer();
-
-
             BlockItemExt blockItemExt = (BlockItemExt) blockItem;
             BlockState beforeState = blockItemExt.getBeforeState();
             if (beforeState != null) {
                 //System.out.println(beforeState.getFluidState().getFluid());
-                if (!beforeState.getFluidState().isEmpty() && !isWaterlogged(blockState)) { // 放置前的方块是流体，放置后不是含水，
-                    //System.out.println("remove fluid");
+                if (!beforeState.getFluidState().isEmpty() && (blockState.contains(Properties.WATERLOGGED) && !blockState.get(Properties.WATERLOGGED))) { // 放置前的方块是流体(水或岩浆)，放置后不是含水，!isWaterlogged(blockState)
+                    System.out.println("remove fluid");
                     onBlockBroken((ServerPlayerEntity) player, blockPos, beforeState, (ServerWorld) context.getWorld());
                     blockItemExt.setBeforeState(null); //处理完重置为null
                 }
             }
-
-
-            LinkedHashMap<String, Object> map = new LinkedHashMap<>();
-            map.put("time", (int) (new Date().getTime() / 1000));
-            map.put("uid", getUserId(player));
-            map.put("wid", getWorldId(context.getWorld()));
-            map.put("x", blockPos.getX());
-            map.put("y", blockPos.getY());
-            map.put("z", blockPos.getZ());
-            map.put("bid", getBlockId(blockState.getBlock()));
-            map.put("sid", getBlockStateId(blockState));
-            map.put("action", 1); //1 placed
-            map.put("rolled_back", 0);
-            SqliteHelper.insert(SqliteHelper.tableNameBlock, map);
+            insertBlock(player, blockPos, blockState, context.getWorld(), 1);// action 1 placed
         }
     }
 
@@ -288,16 +294,7 @@ public class MCLogCore {
      * @param player 玩家
      */
     public static void onPlayerConnect(ServerPlayerEntity player) {
-        LinkedHashMap<String, Object> map = new LinkedHashMap<>();
-        map.put("time", (int) (new Date().getTime() / 1000));
-        map.put("uid", getUserId(player));
-        map.put("wid", getWorldId(player.getWorld()));
-        map.put("x", player.getBlockX());
-        map.put("y", player.getBlockY());
-        map.put("z", player.getBlockZ());
-        map.put("action", 1);
-
-        SqliteHelper.insert(SqliteHelper.tableNameSesssion, map);
+        insertSession(player, 1);
     }
 
     /**
@@ -306,64 +303,9 @@ public class MCLogCore {
      * @param player 玩家
      */
     public static void onDisconnect(ServerPlayerEntity player) {
-        LinkedHashMap<String, Object> map = new LinkedHashMap<>();
-        map.put("time", (int) (new Date().getTime() / 1000));
-        map.put("uid", getUserId(player));
-        map.put("wid", getWorldId(player.getWorld()));
-        map.put("x", player.getBlockX());
-        map.put("y", player.getBlockY());
-        map.put("z", player.getBlockZ());
-        map.put("action", 0);
-        SqliteHelper.insert(SqliteHelper.tableNameSesssion, map);
+        insertSession(player, 0);
     }
 
-    private static BlockHitResult raycast(World world, PlayerEntity player, RaycastContext.FluidHandling fluidHandling) {
-        float f = player.getPitch();
-        float g = player.getYaw();
-        Vec3d vec3d = player.getEyePos();
-        float h = MathHelper.cos(-g * ((float) Math.PI / 180) - (float) Math.PI);
-        float i = MathHelper.sin(-g * ((float) Math.PI / 180) - (float) Math.PI);
-        float j = -MathHelper.cos(-f * ((float) Math.PI / 180));
-        float k = MathHelper.sin(-f * ((float) Math.PI / 180));
-        float l = i * j;
-        float n = h * j;
-        double d = 5.0;
-        Vec3d vec3d2 = vec3d.add((double) l * d, (double) k * d, (double) n * d);
-        return world.raycast(new RaycastContext(vec3d, vec3d2, RaycastContext.ShapeType.OUTLINE, fluidHandling, player));
-    }
-
-    public static void OnBucketUse(BucketItem bucketItem, World world, PlayerEntity user, Hand hand) {
-        if (!world.isClient) {
-            BucketItemExt bucketItemExt = (BucketItemExt) bucketItem;
-            Fluid fluid = bucketItemExt.getFluid();
-            ItemStack itemStack = user.getStackInHand(hand);
-            RaycastContext.FluidHandling fluidHandling = fluid == Fluids.EMPTY ? RaycastContext.FluidHandling.SOURCE_ONLY : RaycastContext.FluidHandling.NONE;
-            BlockHitResult blockHitResult = raycast(world, user, fluidHandling);
-            if (blockHitResult.getType() == HitResult.Type.BLOCK) {
-                BlockPos fluidDrainable;
-                BlockPos blockPos = blockHitResult.getBlockPos();
-
-                BlockState blockState = world.getBlockState(blockPos);
-                System.out.println(blockState);
-                System.out.println("use");
-                if (fluid == Fluids.EMPTY) {
-                    //如果是空桶
-                    System.out.println("empty");
-                    FluidDrainable fluidDrainable2;
-                    ItemStack itemStack2;
-                    if (blockState.getBlock() instanceof FluidDrainable && !(itemStack2 = (fluidDrainable2 = (FluidDrainable) ((Object) blockState.getBlock())).tryDrainFluid(world, blockPos, blockState)).isEmpty()) {
-                        System.out.println("dkdkdk");
-                    }
-                } else {
-                    //。。。
-                }
-            }
-            System.out.println(fluid);
-
-            bucketItemExt.getFluid().getDefaultState();
-        }
-
-    }
 
     public static void inventoryUpdate(PlayerEntity player, ItemStack beforeItemStack, ItemStack afterItemStack, BlockPos blockPos) {
         if (beforeItemStack == null || afterItemStack == null) return;
@@ -396,19 +338,17 @@ public class MCLogCore {
         //
     }
 
-    public static void insertContainer(BlockPos blockPos, ServerPlayerEntity player, ItemStack itemStack, int action) {
-        LinkedHashMap<String, Object> map = new LinkedHashMap<>();
-        map.put("time", (int) (new Date().getTime() / 1000));
-        map.put("uid", getUserId(player));
-        map.put("wid", getWorldId(player.getWorld()));
-        map.put("x",blockPos.getX());
-        map.put("y", blockPos.getY());
-        map.put("z", blockPos.getZ());
-        map.put("item", getItemId(itemStack.getItem()));
-        map.put("data", itemStack.writeNbt(new NbtCompound()).asString());
-        map.put("action", action);
-        map.put("rolled_back", 0);
 
-         SqliteHelper.insert(SqliteHelper.tableNameContainer, map);
+    public static void onBucketUse(World world, PlayerEntity user, Hand hand, BucketItemBeforeExt bucketItemBeforeExt, int action) {
+        if (world.isClient) {
+            return;
+        }
+
+        insertBlock(user, bucketItemBeforeExt.getBlockPos(), bucketItemBeforeExt.getBlockState(), world, action);
+
+        System.out.println(bucketItemBeforeExt.getBlockPos());
+        System.out.println(bucketItemBeforeExt.getBlockState());
+
     }
+
 }

@@ -6,8 +6,6 @@ import cn.acyco.mclog.ext.BlockItemExt;
 import cn.acyco.mclog.ext.BucketItemBeforeExt;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
-import net.minecraft.block.entity.BlockEntity;
-import net.minecraft.block.entity.LockableContainerBlockEntity;
 import net.minecraft.entity.damage.DamageSource;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.BlockItem;
@@ -23,6 +21,7 @@ import net.minecraft.state.property.Properties;
 import net.minecraft.state.property.Property;
 import net.minecraft.util.Hand;
 import net.minecraft.util.WorldSavePath;
+import net.minecraft.util.collection.DefaultedList;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.registry.Registry;
 import net.minecraft.world.World;
@@ -245,20 +244,24 @@ public class MCLogCore {
 
     /**
      * 方块破坏事件
-     *
+     *  @param saveItemStack
      * @param player     玩家
      * @param pos        方块位置
      * @param blockState 方块状态
      * @param world      世界
      */
-    public static void onBlockBroken(ServerPlayerEntity player, BlockPos pos, BlockState blockState, ServerWorld world) {
+    public static void onBlockBroken(DefaultedList<ItemStack> saveItemStack, ServerPlayerEntity player, BlockPos pos, BlockState blockState, ServerWorld world) {
         insertBlock(player, pos, blockState, world, 0);// action 0 broke
-
-        BlockEntity blockEntity = world.getBlockEntity(pos);
-        if (blockEntity instanceof LockableContainerBlockEntity) {
+        if(saveItemStack == null) return;
+            for (int i = 0; i < saveItemStack.size(); i++) {
+                ItemStack itemStack = saveItemStack.get(i);
+                if (!itemStack.isEmpty()) {
+                    insertContainer( pos, player, itemStack,0);// action 0 remove
+                    System.out.println(itemStack);
+                }
+            }
             //System.out.println(blockEntity.);
-        }
-        System.out.println(blockState.getBlock());
+
     }
 
 
@@ -279,7 +282,7 @@ public class MCLogCore {
                 //System.out.println(beforeState.getFluidState().getFluid());
                 if (!beforeState.getFluidState().isEmpty() && (blockState.contains(Properties.WATERLOGGED) && !blockState.get(Properties.WATERLOGGED))) { // 放置前的方块是流体(水或岩浆)，放置后不是含水，!isWaterlogged(blockState)
                     System.out.println("remove fluid");
-                    onBlockBroken((ServerPlayerEntity) player, blockPos, beforeState, (ServerWorld) context.getWorld());
+                    onBlockBroken(null, (ServerPlayerEntity) player, blockPos, beforeState, (ServerWorld) context.getWorld());
                     blockItemExt.setBeforeState(null); //处理完重置为null
                 }
             }
@@ -334,8 +337,6 @@ public class MCLogCore {
 
         boolean isBeforeEmpty = beforeItemStack.isEmpty();
         insertContainer(blockPos, (ServerPlayerEntity) player, isBeforeEmpty ? afterItemStack : beforeItemStack, isBeforeEmpty ? 1 : 0);
-
-        //
     }
 
 
@@ -343,12 +344,8 @@ public class MCLogCore {
         if (world.isClient) {
             return;
         }
-
         insertBlock(user, bucketItemBeforeExt.getBlockPos(), bucketItemBeforeExt.getBlockState(), world, action);
-
-        System.out.println(bucketItemBeforeExt.getBlockPos());
-        System.out.println(bucketItemBeforeExt.getBlockState());
-
     }
+
 
 }

@@ -42,7 +42,6 @@ public abstract class BucketItemMixin implements BucketItemExt {
             //target= "Lnet/minecraft/util/TypedActionResult;success(Ljava/lang/Object;Z)Lnet/minecraft/util/TypedActionResult;"
     ))
     public void onUse(World world, PlayerEntity user, Hand hand, CallbackInfoReturnable<TypedActionResult<ItemStack>> cir) {
-        bucketItemBeforeExt.setFluid(this.getFluid());
         ItemStack itemStack = user.getStackInHand(hand);
 
         BlockHitResult blockHitResult = BlockHitResultUtil.raycast(world, user, this.fluid == Fluids.EMPTY ? RaycastContext.FluidHandling.SOURCE_ONLY : RaycastContext.FluidHandling.NONE);

@@ -13,6 +13,7 @@
     "ServerPlayerEntityMixin",
     "ServerPlayerInteractionManagerMixin",
     "SlotMixin",
+    "tools.AxeItemMixin",
     "tools.FlintAndSteelItemMixin",
     "tools.ShovelItemMixin"
   ],

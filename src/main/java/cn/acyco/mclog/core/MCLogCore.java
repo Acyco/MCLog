@@ -420,7 +420,7 @@ public class MCLogCore {
 
     }
 
-    public static void shovelItemUserOnBlock(Args args, ItemUsageContext context) {
+    public static void shovelOrAxeItemUserOnBlock(Args args, ItemUsageContext context) {
         World world = context.getWorld();
         if (world.isClient) {
             return;

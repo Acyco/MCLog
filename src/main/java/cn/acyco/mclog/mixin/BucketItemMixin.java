@@ -1,5 +1,6 @@
 package cn.acyco.mclog.mixin;
 
+import cn.acyco.mclog.core.BlockActionType;
 import cn.acyco.mclog.core.MCLogCore;
 import cn.acyco.mclog.ext.BucketItemBeforeExt;
 import cn.acyco.mclog.ext.BucketItemExt;
@@ -78,7 +79,7 @@ public abstract class BucketItemMixin implements BucketItemExt {
             target = "Lnet/minecraft/util/TypedActionResult;success(Ljava/lang/Object;Z)Lnet/minecraft/util/TypedActionResult;", ordinal = 0
     ))
     public void onUseEmpty(World world, PlayerEntity user, Hand hand, CallbackInfoReturnable<TypedActionResult<ItemStack>> cir) {
-        MCLogCore.onBucketUse(world, user, bucketItemBeforeExt, 0);
+        MCLogCore.onBucketUse(world, user, bucketItemBeforeExt, BlockActionType.BREAK);
     }
 
     @Inject(method = "use", at = @At(
@@ -89,7 +90,7 @@ public abstract class BucketItemMixin implements BucketItemExt {
 
 
 
-        MCLogCore.onBucketUse(world, user, bucketItemBeforeExt, 1);
+        MCLogCore.onBucketUse(world, user, bucketItemBeforeExt, BlockActionType.PLACE);
 
     }
 

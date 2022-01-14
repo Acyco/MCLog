@@ -16,6 +16,7 @@ import net.minecraft.item.BucketItem;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemPlacementContext;
 import net.minecraft.item.ItemStack;
+import net.minecraft.item.ItemUsageContext;
 import net.minecraft.nbt.NbtCompound;
 import net.minecraft.nbt.NbtList;
 import net.minecraft.server.MinecraftServer;
@@ -35,6 +36,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
+import org.spongepowered.asm.mixin.injection.invoke.arg.Args;
 
 import java.io.File;
 import java.util.Date;
@@ -205,7 +207,7 @@ public class MCLogCore {
 
     }
 
-    public static void insertBlock(PlayerEntity player, BlockPos pos, BlockState blockState, World world, int action) {
+    public static void insertBlock(PlayerEntity player, BlockPos pos, BlockState blockState, World world, BlockActionType actionType) {
         LinkedHashMap<String, Object> map = new LinkedHashMap<>();
         map.put("time", (int) (new Date().getTime() / 1000));
         map.put("uid", getUserId(player));
@@ -215,7 +217,7 @@ public class MCLogCore {
         map.put("z", pos.getZ());
         map.put("bid", getBlockId(blockState.getBlock()));
         map.put("sid", getBlockStateId(blockState));
-        map.put("action", action);
+        map.put("action", actionType.getValue());
         map.put("rolled_back", 0);
         SqliteHelper.insert(SqliteHelper.tableNameBlock, map);
     }
@@ -258,12 +260,12 @@ public class MCLogCore {
      * @param world      世界
      */
     public static void onBlockBroken(DefaultedList<ItemStack> saveItemStack, ServerPlayerEntity player, BlockPos pos, BlockState blockState, ServerWorld world) {
-        insertBlock(player, pos, blockState, world, 0);// action 0 broke
+        insertBlock(player, pos, blockState, world, BlockActionType.BREAK);
         if(saveItemStack == null) return;
         for (ItemStack itemStack : saveItemStack) {
             if (!itemStack.isEmpty()) {
                 insertContainer(pos, player, itemStack, 0);// action 0 remove
-                System.out.println(itemStack);
+
             }
         }
             //System.out.println(blockEntity.);
@@ -293,7 +295,7 @@ public class MCLogCore {
                     blockItemExt.setBeforeState(null); //处理完重置为null
                 }
             }
-            insertBlock(player, blockPos, blockState, context.getWorld(), 1);// action 1 placed
+            insertBlock(player, blockPos, blockState, context.getWorld(), BlockActionType.PLACE);
         }
     }
 
@@ -347,17 +349,17 @@ public class MCLogCore {
     }
 
 
-    public static void onBucketUse(World world, PlayerEntity user, BucketItemBeforeExt bucketItemBeforeExt, int action) {
+    public static void onBucketUse(World world, PlayerEntity user, BucketItemBeforeExt bucketItemBeforeExt, BlockActionType actionType) {
         if (world.isClient) {
             return;
         }
         BlockState blockState = bucketItemBeforeExt.getBlockState();
         BlockPos blockPos = bucketItemBeforeExt.getBlockPos();
-        if (action == 1) {
+        if (actionType == BlockActionType.PLACE) {
             //放置流体方块 要重新获取所在位置新的流体方块
             blockState = world.getFluidState(blockPos).getBlockState();
         }
-        insertBlock(user, blockPos, blockState, world, action);
+        insertBlock(user, blockPos, blockState, world, actionType);
     }
 
 
@@ -375,7 +377,6 @@ public class MCLogCore {
             //System.out.println(blockPos1);
             //System.out.println(blockState);
             //System.out.println(world.getBlockState(blockPos1));
-
         }
     }
 
@@ -384,10 +385,8 @@ public class MCLogCore {
             AbstractBlockStateExt abstractBlockStateExt = (AbstractBlockStateExt) abstractBlockState;
             BlockPos blockPos = hit.getBlockPos();
            if(abstractBlockState.getBlock() instanceof ChestBlock)
-            insertBlock(player,blockPos, abstractBlockStateExt.getBeforeBlockState(), world, 2); // action 2 click
+            insertBlock(player,blockPos, abstractBlockStateExt.getBeforeBlockState(), world, BlockActionType.CLICK);
         }
-
-
     }
 
     public static void placeFluid(BucketItem bucketItem, PlayerEntity player, World world, BlockPos pos, BlockHitResult hitResult, CallbackInfoReturnable<Boolean> cir) {
@@ -399,6 +398,25 @@ public class MCLogCore {
 
             System.out.println(hitResult);
         }
+
+    }
+
+    public static void flintAndSteelItemUserOnBlock(Args args, ItemUsageContext context) {
+
+        World world = context.getWorld();
+        if (world.isClient) {
+            return;
+        }
+        BlockPos pos = args.get(0);
+        BlockState AfterState = args.get(1);
+        BlockState beforeState = world.getBlockState(pos);
+
+
+        if (AfterState.getBlock().equals(beforeState.getBlock())) {
+            //两个前后都是相同的方块
+            insertBlock(context.getPlayer(), pos, beforeState, world, BlockActionType.BREAK); //先移除
+        }
+        insertBlock(context.getPlayer(), pos, AfterState, world, BlockActionType.PLACE); //后添加
 
     }
 }

@@ -7,13 +7,14 @@
     "AbstractBlockMixin",
     "BlockItemMixin",
     "BucketItemMixin",
-    "FlintAndSteelItemMixin",
     "MinecraftServerMixin",
     "PlayerManagerMixin",
     "ScreenHandlerMixin",
     "ServerPlayerEntityMixin",
     "ServerPlayerInteractionManagerMixin",
-    "SlotMixin"
+    "SlotMixin",
+    "tools.FlintAndSteelItemMixin",
+    "tools.ShovelItemMixin"
   ],
   "client": [
 

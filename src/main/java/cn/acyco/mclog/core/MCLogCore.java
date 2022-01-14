@@ -419,4 +419,16 @@ public class MCLogCore {
         insertBlock(context.getPlayer(), pos, AfterState, world, BlockActionType.PLACE); //后添加
 
     }
+
+    public static void shovelItemUserOnBlock(Args args, ItemUsageContext context) {
+        World world = context.getWorld();
+        if (world.isClient) {
+            return;
+        }
+        BlockPos pos = args.get(0);
+        BlockState AfterState = args.get(1);
+        BlockState beforeState = world.getBlockState(pos);
+        insertBlock(context.getPlayer(), pos, beforeState, world, BlockActionType.BREAK); //先移除
+        insertBlock(context.getPlayer(), pos, AfterState, world, BlockActionType.PLACE); //后添加
+    }
 }

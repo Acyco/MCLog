@@ -8,9 +8,11 @@ import cn.acyco.mclog.ext.BucketItemBeforeExt;
 import net.minecraft.block.AbstractBlock;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
+import net.minecraft.block.ChestBlock;
 import net.minecraft.entity.damage.DamageSource;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.BlockItem;
+import net.minecraft.item.BucketItem;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemPlacementContext;
 import net.minecraft.item.ItemStack;
@@ -286,7 +288,8 @@ public class MCLogCore {
                 //System.out.println(beforeState.getFluidState().getFluid());
                 if (!beforeState.getFluidState().isEmpty() && (blockState.contains(Properties.WATERLOGGED) && !blockState.get(Properties.WATERLOGGED))) { // 放置前的方块是流体(水或岩浆)，放置后不是含水，!isWaterlogged(blockState)
                     System.out.println("remove fluid");
-                    onBlockBroken(null, (ServerPlayerEntity) player, blockPos, beforeState, (ServerWorld) context.getWorld());
+
+                    onBlockBroken(null, (ServerPlayerEntity) player, blockPos, blockItemExt.getBeforeFluidState().getBlockState(), (ServerWorld) context.getWorld());
                     blockItemExt.setBeforeState(null); //处理完重置为null
                 }
             }
@@ -348,7 +351,13 @@ public class MCLogCore {
         if (world.isClient) {
             return;
         }
-        insertBlock(user, bucketItemBeforeExt.getBlockPos(), bucketItemBeforeExt.getBlockState(), world, action);
+        BlockState blockState = bucketItemBeforeExt.getBlockState();
+        BlockPos blockPos = bucketItemBeforeExt.getBlockPos();
+        if (action == 1) {
+            //放置流体方块 要重新获取所在位置新的流体方块
+            blockState = world.getFluidState(blockPos).getBlockState();
+        }
+        insertBlock(user, blockPos, blockState, world, action);
     }
 
 
@@ -373,16 +382,23 @@ public class MCLogCore {
     public static void onUse(World world, PlayerEntity player, Hand hand, BlockHitResult hit, AbstractBlock.AbstractBlockState abstractBlockState) {
         if (abstractBlockState instanceof AbstractBlockStateExt) {
             AbstractBlockStateExt abstractBlockStateExt = (AbstractBlockStateExt) abstractBlockState;
-            System.out.println(world);
-            System.out.println(player);
-            System.out.println(hit);
             BlockPos blockPos = hit.getBlockPos();
-            System.out.println(blockPos);
-            System.out.println(abstractBlockStateExt.getBeforeBlockState());
-            System.out.println(hand);
+           if(abstractBlockState.getBlock() instanceof ChestBlock)
             insertBlock(player,blockPos, abstractBlockStateExt.getBeforeBlockState(), world, 2); // action 2 click
         }
 
+
+    }
+
+    public static void placeFluid(BucketItem bucketItem, PlayerEntity player, World world, BlockPos pos, BlockHitResult hitResult, CallbackInfoReturnable<Boolean> cir) {
+        if (!world.isClient) {
+            System.out.println(cir.getReturnValueZ());
+            System.out.println(player);
+            System.out.println(world);
+            System.out.println(pos);
+
+            System.out.println(hitResult);
+        }
 
     }
 }

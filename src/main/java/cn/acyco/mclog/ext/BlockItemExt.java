@@ -1,6 +1,7 @@
 package cn.acyco.mclog.ext;
 
 import net.minecraft.block.BlockState;
+import net.minecraft.fluid.FluidState;
 
 /**
  * @author Acyco
@@ -10,4 +11,6 @@ import net.minecraft.block.BlockState;
 public interface BlockItemExt {
     void setBeforeState(BlockState state);
     BlockState getBeforeState();
+    void setBeforeFluidState(FluidState state);
+    FluidState getBeforeFluidState();
 }

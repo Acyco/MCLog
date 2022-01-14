@@ -34,7 +34,9 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 @Mixin(BucketItem.class)
 public abstract class BucketItemMixin implements BucketItemExt {
 
-    @Shadow @Final private Fluid fluid;
+    @Shadow
+    @Final
+    private Fluid fluid;
     private BucketItemBeforeExt bucketItemBeforeExt = new BucketItemBeforeExt();
 
     @Inject(method = "use", at = @At(
@@ -53,14 +55,14 @@ public abstract class BucketItemMixin implements BucketItemExt {
             BlockPos blockPos2 = blockPos.offset(direction);
             if (this.fluid == Fluids.EMPTY) {
                 bucketItemBeforeExt.setBlockPos(blockPos);
-                bucketItemBeforeExt.setBlockState(world.getBlockState(blockPos));
+                bucketItemBeforeExt.setBlockState(world.getFluidState(blockPos).getBlockState());
                 if (!world.canPlayerModifyAt(user, blockPos) || !user.canPlaceOn(blockPos2, direction, itemStack)) {
                     return;
                 }
                 return;
             }
             BlockState blockState = world.getBlockState(blockPos);
-            BlockPos blockPos3 =  blockState.getBlock() instanceof FluidFillable && this.fluid == Fluids.WATER ? blockPos : blockPos2;
+            BlockPos blockPos3 = blockState.getBlock() instanceof FluidFillable && this.fluid == Fluids.WATER ? blockPos : blockPos2;
             bucketItemBeforeExt.setBlockPos(blockPos3);
             bucketItemBeforeExt.setBlockState(world.getBlockState(blockPos3));
         }
@@ -68,24 +70,35 @@ public abstract class BucketItemMixin implements BucketItemExt {
 
     @Override
     public Fluid getFluid() {
-        return  this.fluid;
-    }
-    @Inject(method = "use", at = @At(
-            value = "INVOKE",
-            target= "Lnet/minecraft/util/TypedActionResult;success(Ljava/lang/Object;Z)Lnet/minecraft/util/TypedActionResult;",ordinal = 0
-    ))
-    public void onUseEmpty(World world, PlayerEntity user, Hand hand, CallbackInfoReturnable<TypedActionResult<ItemStack>> cir) {
-        MCLogCore.onBucketUse(world,user,bucketItemBeforeExt,0);
+        return this.fluid;
     }
 
     @Inject(method = "use", at = @At(
             value = "INVOKE",
-            target= "Lnet/minecraft/util/TypedActionResult;success(Ljava/lang/Object;Z)Lnet/minecraft/util/TypedActionResult;",ordinal = 1
+            target = "Lnet/minecraft/util/TypedActionResult;success(Ljava/lang/Object;Z)Lnet/minecraft/util/TypedActionResult;", ordinal = 0
+    ))
+    public void onUseEmpty(World world, PlayerEntity user, Hand hand, CallbackInfoReturnable<TypedActionResult<ItemStack>> cir) {
+        MCLogCore.onBucketUse(world, user, bucketItemBeforeExt, 0);
+    }
+
+    @Inject(method = "use", at = @At(
+            value = "INVOKE",
+            target = "Lnet/minecraft/util/TypedActionResult;success(Ljava/lang/Object;Z)Lnet/minecraft/util/TypedActionResult;", ordinal = 1
     ))
     public void onUsePlace(World world, PlayerEntity user, Hand hand, CallbackInfoReturnable<TypedActionResult<ItemStack>> cir) {
 
-        MCLogCore.onBucketUse(world, user, bucketItemBeforeExt,1);
+
+
+        MCLogCore.onBucketUse(world, user, bucketItemBeforeExt, 1);
 
     }
 
+
+    @Inject(method = "placeFluid", at = @At(
+            value = "INVOKE",
+            target = "Lnet/minecraft/world/World;setBlockState(Lnet/minecraft/util/math/BlockPos;Lnet/minecraft/block/BlockState;I)Z"
+    ))
+    public void place(PlayerEntity player, World world, BlockPos pos, BlockHitResult hitResult, CallbackInfoReturnable<Boolean> cir) {
+        MCLogCore.placeFluid((BucketItem)(Object)this,player, world, pos, hitResult, cir);
+    }
 }

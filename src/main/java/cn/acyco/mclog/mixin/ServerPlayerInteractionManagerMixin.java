@@ -1,6 +1,6 @@
 package cn.acyco.mclog.mixin;
 
-import cn.acyco.mclog.MCLogCore;
+import cn.acyco.mclog.core.MCLogCore;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.entity.BlockEntity;
@@ -9,8 +9,12 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.network.ServerPlayerInteractionManager;
 import net.minecraft.server.world.ServerWorld;
+import net.minecraft.util.ActionResult;
+import net.minecraft.util.Hand;
 import net.minecraft.util.collection.DefaultedList;
+import net.minecraft.util.hit.BlockHitResult;
 import net.minecraft.util.math.BlockPos;
+import net.minecraft.world.World;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -24,7 +28,7 @@ import org.spongepowered.asm.mixin.injection.callback.LocalCapture;
  * @create 2022-01-01 15:51
  * @url https://acyco.cn
  */
-@Mixin(ServerPlayerInteractionManager.class)
+@Mixin(value = ServerPlayerInteractionManager.class,priority = 233)
 public abstract class ServerPlayerInteractionManagerMixin {
     @Shadow @Final protected ServerPlayerEntity player;
 
@@ -55,6 +59,18 @@ public abstract class ServerPlayerInteractionManagerMixin {
     private void onBlockBroken(BlockPos pos, CallbackInfoReturnable<Boolean> cir, BlockState blockState, BlockEntity blockEntity, Block block, boolean bl) {
         MCLogCore.onBlockBroken(this.saveItemStack,player, pos, blockState,this.world);
         this.saveItemStack = null;
+    }
+
+    @Inject(method = "interactBlock",require = 0,cancellable = true, at = @At("RETURN"))
+    private void onInteractBlock(ServerPlayerEntity player, World world, ItemStack stack, Hand hand, BlockHitResult hitResult, CallbackInfoReturnable<ActionResult> cir)
+    {
+        MCLogCore.onInteractBlock(player, world, stack, hand, hitResult,cir);
+
+    }
+
+    @Inject(at = @At("HEAD"), method = "interactBlock", cancellable = true)
+    public void interactBlock(ServerPlayerEntity player, World world, ItemStack stack, Hand hand, BlockHitResult blockHitResult, CallbackInfoReturnable<ActionResult> info) {
+       //处理右键操作
     }
 
 

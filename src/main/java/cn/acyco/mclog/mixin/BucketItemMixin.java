@@ -1,6 +1,6 @@
 package cn.acyco.mclog.mixin;
 
-import cn.acyco.mclog.MCLogCore;
+import cn.acyco.mclog.core.MCLogCore;
 import cn.acyco.mclog.ext.BucketItemBeforeExt;
 import cn.acyco.mclog.ext.BucketItemExt;
 import cn.acyco.mclog.utils.BlockHitResultUtil;
@@ -39,7 +39,6 @@ public abstract class BucketItemMixin implements BucketItemExt {
 
     @Inject(method = "use", at = @At(
             value = "HEAD"
-            //target= "Lnet/minecraft/util/TypedActionResult;success(Ljava/lang/Object;Z)Lnet/minecraft/util/TypedActionResult;"
     ))
     public void onUse(World world, PlayerEntity user, Hand hand, CallbackInfoReturnable<TypedActionResult<ItemStack>> cir) {
         ItemStack itemStack = user.getStackInHand(hand);
@@ -60,15 +59,11 @@ public abstract class BucketItemMixin implements BucketItemExt {
                 }
                 return;
             }
-
-
             BlockState blockState = world.getBlockState(blockPos);
             BlockPos blockPos3 =  blockState.getBlock() instanceof FluidFillable && this.fluid == Fluids.WATER ? blockPos : blockPos2;
             bucketItemBeforeExt.setBlockPos(blockPos3);
             bucketItemBeforeExt.setBlockState(world.getBlockState(blockPos3));
-            return ;
         }
-        //MCLogCore.OnBucketUseHead((BucketItem) (Object) this, world, user, hand);
     }
 
     @Override
@@ -80,7 +75,7 @@ public abstract class BucketItemMixin implements BucketItemExt {
             target= "Lnet/minecraft/util/TypedActionResult;success(Ljava/lang/Object;Z)Lnet/minecraft/util/TypedActionResult;",ordinal = 0
     ))
     public void onUseEmpty(World world, PlayerEntity user, Hand hand, CallbackInfoReturnable<TypedActionResult<ItemStack>> cir) {
-        MCLogCore.onBucketUse(world,user,hand,bucketItemBeforeExt,0);
+        MCLogCore.onBucketUse(world,user,bucketItemBeforeExt,0);
     }
 
     @Inject(method = "use", at = @At(
@@ -89,7 +84,7 @@ public abstract class BucketItemMixin implements BucketItemExt {
     ))
     public void onUsePlace(World world, PlayerEntity user, Hand hand, CallbackInfoReturnable<TypedActionResult<ItemStack>> cir) {
 
-        MCLogCore.onBucketUse(world, user, hand, bucketItemBeforeExt,1);
+        MCLogCore.onBucketUse(world, user, bucketItemBeforeExt,1);
 
     }
 

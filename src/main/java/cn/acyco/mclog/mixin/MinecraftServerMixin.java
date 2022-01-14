@@ -1,6 +1,6 @@
 package cn.acyco.mclog.mixin;
 
-import cn.acyco.mclog.MCLogCore;
+import cn.acyco.mclog.core.MCLogCore;
 import net.minecraft.server.MinecraftServer;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;

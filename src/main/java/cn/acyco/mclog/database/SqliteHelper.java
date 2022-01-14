@@ -1,6 +1,6 @@
 package cn.acyco.mclog.database;
 
-import cn.acyco.mclog.MCLogCore;
+import cn.acyco.mclog.core.MCLogCore;
 import cn.acyco.mclog.config.ConfigData;
 
 import java.io.File;

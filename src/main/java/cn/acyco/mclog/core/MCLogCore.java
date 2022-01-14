@@ -1,9 +1,11 @@
-package cn.acyco.mclog;
+package cn.acyco.mclog.core;
 
 import cn.acyco.mclog.config.Config;
 import cn.acyco.mclog.database.SqliteHelper;
+import cn.acyco.mclog.ext.AbstractBlockStateExt;
 import cn.acyco.mclog.ext.BlockItemExt;
 import cn.acyco.mclog.ext.BucketItemBeforeExt;
+import net.minecraft.block.AbstractBlock;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
 import net.minecraft.entity.damage.DamageSource;
@@ -19,15 +21,18 @@ import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.state.property.Properties;
 import net.minecraft.state.property.Property;
+import net.minecraft.util.ActionResult;
 import net.minecraft.util.Hand;
 import net.minecraft.util.WorldSavePath;
 import net.minecraft.util.collection.DefaultedList;
+import net.minecraft.util.hit.BlockHitResult;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.registry.Registry;
 import net.minecraft.world.World;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 import java.io.File;
 import java.util.Date;
@@ -244,7 +249,7 @@ public class MCLogCore {
 
     /**
      * 方块破坏事件
-     *  @param saveItemStack
+     *  @param saveItemStack 破坏前的容器里面的物品
      * @param player     玩家
      * @param pos        方块位置
      * @param blockState 方块状态
@@ -253,13 +258,12 @@ public class MCLogCore {
     public static void onBlockBroken(DefaultedList<ItemStack> saveItemStack, ServerPlayerEntity player, BlockPos pos, BlockState blockState, ServerWorld world) {
         insertBlock(player, pos, blockState, world, 0);// action 0 broke
         if(saveItemStack == null) return;
-            for (int i = 0; i < saveItemStack.size(); i++) {
-                ItemStack itemStack = saveItemStack.get(i);
-                if (!itemStack.isEmpty()) {
-                    insertContainer( pos, player, itemStack,0);// action 0 remove
-                    System.out.println(itemStack);
-                }
+        for (ItemStack itemStack : saveItemStack) {
+            if (!itemStack.isEmpty()) {
+                insertContainer(pos, player, itemStack, 0);// action 0 remove
+                System.out.println(itemStack);
             }
+        }
             //System.out.println(blockEntity.);
 
     }
@@ -340,7 +344,7 @@ public class MCLogCore {
     }
 
 
-    public static void onBucketUse(World world, PlayerEntity user, Hand hand, BucketItemBeforeExt bucketItemBeforeExt, int action) {
+    public static void onBucketUse(World world, PlayerEntity user, BucketItemBeforeExt bucketItemBeforeExt, int action) {
         if (world.isClient) {
             return;
         }
@@ -348,4 +352,37 @@ public class MCLogCore {
     }
 
 
+    public static void onInteractBlock(ServerPlayerEntity player, World world, ItemStack stack, Hand hand, BlockHitResult hitResult, CallbackInfoReturnable<ActionResult> cir) {
+
+        if (cir.getReturnValue().isAccepted()) {
+            //
+
+            BlockPos blockPos = hitResult.getBlockPos();
+            BlockState blockState = world.getBlockState(blockPos);
+
+            /*        player.getCommandSource().withLookingAt(hitResult.getBlockPos().offset(hitResult.getSide()));*/
+            //BlockPos blockPos1=  blockPos.offset(hitResult.getSide());
+            //System.out.println(blockPos);
+            //System.out.println(blockPos1);
+            //System.out.println(blockState);
+            //System.out.println(world.getBlockState(blockPos1));
+
+        }
+    }
+
+    public static void onUse(World world, PlayerEntity player, Hand hand, BlockHitResult hit, AbstractBlock.AbstractBlockState abstractBlockState) {
+        if (abstractBlockState instanceof AbstractBlockStateExt) {
+            AbstractBlockStateExt abstractBlockStateExt = (AbstractBlockStateExt) abstractBlockState;
+            System.out.println(world);
+            System.out.println(player);
+            System.out.println(hit);
+            BlockPos blockPos = hit.getBlockPos();
+            System.out.println(blockPos);
+            System.out.println(abstractBlockStateExt.getBeforeBlockState());
+            System.out.println(hand);
+            insertBlock(player,blockPos, abstractBlockStateExt.getBeforeBlockState(), world, 2); // action 2 click
+        }
+
+
+    }
 }

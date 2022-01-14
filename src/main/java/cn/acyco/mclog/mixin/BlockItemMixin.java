@@ -1,6 +1,6 @@
 package cn.acyco.mclog.mixin;
 
-import cn.acyco.mclog.MCLogCore;
+import cn.acyco.mclog.core.MCLogCore;
 import cn.acyco.mclog.ext.BlockItemExt;
 import net.minecraft.block.BlockState;
 import net.minecraft.item.BlockItem;

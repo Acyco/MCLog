@@ -1,6 +1,6 @@
 package cn.acyco.mclog.mixin;
 
-import cn.acyco.mclog.MCLogCore;
+import cn.acyco.mclog.core.MCLogCore;
 import cn.acyco.mclog.ext.ScreenHandlerExt;
 import cn.acyco.mclog.ext.SlotExt;
 import net.minecraft.block.entity.LockableContainerBlockEntity;

@@ -4,6 +4,7 @@
   "package": "cn.acyco.mclog.mixin",
   "compatibilityLevel": "JAVA_16",
   "mixins": [
+    "AbstractBlockMixin",
     "BlockItemMixin",
     "BucketItemMixin",
     "MinecraftServerMixin",

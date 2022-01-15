@@ -15,6 +15,7 @@
     "SlotMixin",
     "tools.AxeItemMixin",
     "tools.FlintAndSteelItemMixin",
+    "tools.HoeItemMixin",
     "tools.ShovelItemMixin"
   ],
   "client": [

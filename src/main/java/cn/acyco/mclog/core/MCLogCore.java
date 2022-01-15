@@ -431,4 +431,16 @@ public class MCLogCore {
         insertBlock(context.getPlayer(), pos, beforeState, world, BlockActionType.BREAK); //先移除
         insertBlock(context.getPlayer(), pos, AfterState, world, BlockActionType.PLACE); //后添加
     }
+    public static void hoeItemUserOnBlock(BlockState AfterState, ItemUsageContext context) {
+        World world = context.getWorld();
+        if (world.isClient) {
+            return;
+        }
+        BlockPos pos = context.getBlockPos();
+        BlockState beforeState = world.getBlockState(pos);
+        System.out.println(beforeState);
+        System.out.println(AfterState);
+        insertBlock(context.getPlayer(), pos, beforeState, world, BlockActionType.BREAK); //先移除
+        insertBlock(context.getPlayer(), pos, AfterState, world, BlockActionType.PLACE); //后添加
+    }
 }

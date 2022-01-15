@@ -65,7 +65,6 @@ public abstract class ServerPlayerInteractionManagerMixin {
     private void onInteractBlock(ServerPlayerEntity player, World world, ItemStack stack, Hand hand, BlockHitResult hitResult, CallbackInfoReturnable<ActionResult> cir)
     {
         MCLogCore.onInteractBlock(player, world, stack, hand, hitResult,cir);
-
     }
 
     @Inject(at = @At("HEAD"), method = "interactBlock", cancellable = true)

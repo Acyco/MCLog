@@ -1,4 +1,4 @@
-package cn.acyco.mclog.mixin.tools;
+package cn.acyco.mclog.mixin.items;
 
 import cn.acyco.mclog.core.MCLogCore;
 import net.minecraft.item.FlintAndSteelItem;

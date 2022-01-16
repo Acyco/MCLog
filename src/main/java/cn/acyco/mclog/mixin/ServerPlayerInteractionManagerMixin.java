@@ -67,10 +67,4 @@ public abstract class ServerPlayerInteractionManagerMixin {
         MCLogCore.onInteractBlock(player, world, stack, hand, hitResult,cir);
     }
 
-    @Inject(at = @At("HEAD"), method = "interactBlock", cancellable = true)
-    public void interactBlock(ServerPlayerEntity player, World world, ItemStack stack, Hand hand, BlockHitResult blockHitResult, CallbackInfoReturnable<ActionResult> info) {
-       //处理右键操作
-    }
-
-
 }

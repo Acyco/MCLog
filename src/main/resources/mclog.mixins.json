@@ -6,17 +6,18 @@
   "mixins": [
     "AbstractBlockMixin",
     "BlockItemMixin",
-    "BucketItemMixin",
     "MinecraftServerMixin",
     "PlayerManagerMixin",
     "ScreenHandlerMixin",
     "ServerPlayerEntityMixin",
     "ServerPlayerInteractionManagerMixin",
     "SlotMixin",
-    "tools.AxeItemMixin",
-    "tools.FlintAndSteelItemMixin",
-    "tools.HoeItemMixin",
-    "tools.ShovelItemMixin"
+    "items.AxeItemMixin",
+    "items.BucketItemMixin",
+    "items.FlintAndSteelItemMixin",
+    "items.HoeItemMixin",
+    "items.HoneycombItemMixin",
+    "items.ShovelItemMixin"
   ],
   "client": [
 

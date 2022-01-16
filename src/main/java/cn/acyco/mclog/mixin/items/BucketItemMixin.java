@@ -1,4 +1,4 @@
-package cn.acyco.mclog.mixin;
+package cn.acyco.mclog.mixin.items;
 
 import cn.acyco.mclog.core.BlockActionType;
 import cn.acyco.mclog.core.MCLogCore;

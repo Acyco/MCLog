@@ -381,8 +381,7 @@ public class MCLogCore {
     }
 
     public static void onUse(World world, PlayerEntity player, Hand hand, BlockHitResult hit, AbstractBlock.AbstractBlockState abstractBlockState) {
-        if (abstractBlockState instanceof AbstractBlockStateExt) {
-            AbstractBlockStateExt abstractBlockStateExt = (AbstractBlockStateExt) abstractBlockState;
+        if (abstractBlockState instanceof AbstractBlockStateExt abstractBlockStateExt) {
             BlockPos blockPos = hit.getBlockPos();
            if(abstractBlockState.getBlock() instanceof ChestBlock)
             insertBlock(player,blockPos, abstractBlockStateExt.getBeforeBlockState(), world, BlockActionType.CLICK);
@@ -401,6 +400,7 @@ public class MCLogCore {
 
     }
 
+    // items use begin
     public static void flintAndSteelItemUserOnBlock(Args args, ItemUsageContext context) {
 
         World world = context.getWorld();
@@ -420,14 +420,16 @@ public class MCLogCore {
 
     }
 
-    public static void shovelOrAxeItemUserOnBlock(Args args, ItemUsageContext context) {
+    public static void shovelOrAxeOrHoneycombItemUserOnBlock(Args args, ItemUsageContext context) {
         World world = context.getWorld();
         if (world.isClient) {
             return;
         }
-        BlockPos pos = args.get(0);
         BlockState AfterState = args.get(1);
+        BlockPos pos = args.get(0);
         BlockState beforeState = world.getBlockState(pos);
+        System.out.println(beforeState);
+        System.out.println(AfterState);
         insertBlock(context.getPlayer(), pos, beforeState, world, BlockActionType.BREAK); //先移除
         insertBlock(context.getPlayer(), pos, AfterState, world, BlockActionType.PLACE); //后添加
     }
@@ -438,9 +440,10 @@ public class MCLogCore {
         }
         BlockPos pos = context.getBlockPos();
         BlockState beforeState = world.getBlockState(pos);
-        System.out.println(beforeState);
-        System.out.println(AfterState);
         insertBlock(context.getPlayer(), pos, beforeState, world, BlockActionType.BREAK); //先移除
         insertBlock(context.getPlayer(), pos, AfterState, world, BlockActionType.PLACE); //后添加
     }
+
+
+    // items use end
 }

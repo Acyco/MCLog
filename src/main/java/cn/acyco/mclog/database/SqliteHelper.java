@@ -1,7 +1,7 @@
 package cn.acyco.mclog.database;
 
-import cn.acyco.mclog.core.MCLogCore;
 import cn.acyco.mclog.config.ConfigData;
+import cn.acyco.mclog.core.MCLogCore;
 
 import java.io.File;
 import java.sql.Connection;
@@ -22,7 +22,7 @@ import java.util.Map;
 public class SqliteHelper {
     public static Connection connection = null;
     public static ConfigData configData = MCLogCore.config.getConfigData();
-    ;
+    public static File databaseFile = null;
     public static String prefix = configData.prefix;
     public static String tableNameBlock = prefix + "block";
     public static String tableNameBlockMap = prefix + "block_map";
@@ -37,14 +37,20 @@ public class SqliteHelper {
     public static Connection getConnection() {
 
         //Connection connection = null;
+        if (connection != null) {
+            return connection;
+        }
         try {
             Class.forName("org.sqlite.JDBC");
-            File datebaseFile = MCLogCore.getPathFile(configData.databaseFile);
-            connection = DriverManager.getConnection("jdbc:sqlite:" + datebaseFile.getPath());
+            if (databaseFile == null) {
+                databaseFile = MCLogCore.getPathFile(configData.databaseFile);
+            }
+            connection = DriverManager.getConnection("jdbc:sqlite:" + databaseFile.getPath());
             return connection;
         } catch (Exception e) {
             e.printStackTrace();
         }
+
         return null;
     }
 

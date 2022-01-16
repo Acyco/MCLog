@@ -39,6 +39,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 import org.spongepowered.asm.mixin.injection.invoke.arg.Args;
 
 import java.io.File;
+import java.sql.SQLException;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -87,6 +88,18 @@ public class MCLogCore {
         }
     }
 
+    public static void serverShutdown() {
+        if (SqliteHelper.connection != null) {
+            try {
+                SqliteHelper.connection.close();
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
+                SqliteHelper.connection = null;
+                SqliteHelper.databaseFile = null;
+
+        }
+    }
     public static File getPathFile(String name) {
         return server.getSavePath(WorldSavePath.ROOT).resolve(name).toFile();
     }
@@ -443,6 +456,8 @@ public class MCLogCore {
         insertBlock(context.getPlayer(), pos, beforeState, world, BlockActionType.BREAK); //先移除
         insertBlock(context.getPlayer(), pos, AfterState, world, BlockActionType.PLACE); //后添加
     }
+
+
 
 
     // items use end

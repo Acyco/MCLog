@@ -32,4 +32,10 @@ public abstract class MinecraftServerMixin {
 
         return result;
     }*/
+
+
+    @Inject(method = "shutdown", at = @At("HEAD"))
+    private void shutdown(CallbackInfo ci) {
+        MCLogCore.serverShutdown();
+    }
 }

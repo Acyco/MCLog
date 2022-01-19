@@ -6,6 +6,8 @@
   "mixins": [
     "AbstractBlockMixin",
     "BlockItemMixin",
+    "CreeperEntityMixin",
+    "ExplosionMixin",
     "MinecraftServerMixin",
     "PlayerManagerMixin",
     "ScreenHandlerMixin",

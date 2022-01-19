@@ -9,7 +9,10 @@ import net.minecraft.block.AbstractBlock;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.ChestBlock;
+import net.minecraft.entity.Entity;
+import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.damage.DamageSource;
+import net.minecraft.entity.mob.CreeperEntity;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.BlockItem;
 import net.minecraft.item.BucketItem;
@@ -32,6 +35,7 @@ import net.minecraft.util.hit.BlockHitResult;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.registry.Registry;
 import net.minecraft.world.World;
+import net.minecraft.world.explosion.Explosion;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
@@ -456,9 +460,24 @@ public class MCLogCore {
         insertBlock(context.getPlayer(), pos, beforeState, world, BlockActionType.BREAK); //先移除
         insertBlock(context.getPlayer(), pos, AfterState, world, BlockActionType.PLACE); //后添加
     }
-
-
-
-
     // items use end
+    public static void onCreeperExplode(CreeperEntity creeperEntity) {
+        System.out.println("MCLogCore.onCreeperExplode");
+        if (creeperEntity.getWorld().isClient) {
+            return;
+        }
+        System.out.println(creeperEntity.getTarget());
+    }
+
+    public static void onAffectWorld(Explosion explosion, @Nullable Entity entity, World world, BlockPos blockPos, BlockState blockState) {
+        if (world.isClient) {
+            return;
+        }
+        if (entity instanceof CreeperEntity creeper) {
+            LivingEntity livingEntity = creeper.getTarget();
+            if (livingEntity instanceof PlayerEntity player) {
+                insertBlock(player, blockPos,blockState ,world,BlockActionType.EXPLODE);
+            }
+        }
+    }
 }

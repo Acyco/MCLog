@@ -8,8 +8,8 @@ package cn.acyco.mclog.core;
 public enum BlockActionType {
     BREAK(0),
     PLACE(1),
-    CLICK(2)
-    ;
+    CLICK(2),
+    EXPLODE(3);
     private int value;
 
     BlockActionType(int value) {

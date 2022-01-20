@@ -6,10 +6,14 @@ package cn.acyco.mclog.core;
  * @url https://acyco.cn
  */
 public enum BlockActionType {
-    BREAK(0),
-    PLACE(1),
-    CLICK(2),
-    EXPLODE(3);
+
+    BREAK(0), //移除
+    PLACE(1),// 放置
+    CLICK(2), // 交互或点击
+    EXPLODE(3), // 爆炸
+    IGNITE(4) // 点燃
+    ;
+
     private int value;
 
     BlockActionType(int value) {

@@ -35,10 +35,8 @@ public abstract class ExplosionMixin {
     @Inject(method = "affectWorld", locals = LocalCapture.CAPTURE_FAILEXCEPTION, at = @At(
             value = "INVOKE",
             target = "Lnet/minecraft/world/World;setBlockState(Lnet/minecraft/util/math/BlockPos;Lnet/minecraft/block/BlockState;I)Z"
-
     ))
     private void onAffectWorld(boolean particles, CallbackInfo ci, boolean bl, ObjectArrayList objectArrayList, Iterator var4, BlockPos blockPos, BlockState blockState, Block block) {
-        MCLogCore.onAffectWorld((Explosion)(Object)this,this.entity,this.world,blockPos,blockState);
-
+        MCLogCore.onAffectWorld(this.entity,this.world,blockPos,blockState);
     }
 }

@@ -5,9 +5,11 @@ import cn.acyco.mclog.database.SqliteHelper;
 import cn.acyco.mclog.ext.AbstractBlockStateExt;
 import cn.acyco.mclog.ext.BlockItemExt;
 import cn.acyco.mclog.ext.BucketItemBeforeExt;
+import cn.acyco.mclog.ext.TrackServerPlayerExt;
 import net.minecraft.block.AbstractBlock;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
+import net.minecraft.block.Blocks;
 import net.minecraft.block.ChestBlock;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.LivingEntity;
@@ -35,7 +37,6 @@ import net.minecraft.util.hit.BlockHitResult;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.registry.Registry;
 import net.minecraft.world.World;
-import net.minecraft.world.explosion.Explosion;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
@@ -428,12 +429,19 @@ public class MCLogCore {
         BlockState AfterState = args.get(1);
         BlockState beforeState = world.getBlockState(pos);
 
+        PlayerEntity playerEntity = context.getPlayer();
+        if (playerEntity instanceof ServerPlayerEntity serverPlayer) {
+
+            TrackServerPlayerExt blockStateExt = (TrackServerPlayerExt) AfterState;
+            blockStateExt.setMclogTrackPlayer(serverPlayer);//给火方块设置一个临时玩家的实体
+        }
+
 
         if (AfterState.getBlock().equals(beforeState.getBlock())) {
             //两个前后都是相同的方块
-            insertBlock(context.getPlayer(), pos, beforeState, world, BlockActionType.BREAK); //先移除
+            insertBlock(playerEntity, pos, beforeState, world, BlockActionType.BREAK); //先移除
         }
-        insertBlock(context.getPlayer(), pos, AfterState, world, BlockActionType.PLACE); //后添加
+        insertBlock(playerEntity, pos, AfterState, world, BlockActionType.PLACE); //后添加
 
     }
 
@@ -461,23 +469,24 @@ public class MCLogCore {
         insertBlock(context.getPlayer(), pos, AfterState, world, BlockActionType.PLACE); //后添加
     }
     // items use end
-    public static void onCreeperExplode(CreeperEntity creeperEntity) {
-        System.out.println("MCLogCore.onCreeperExplode");
-        if (creeperEntity.getWorld().isClient) {
-            return;
-        }
-        System.out.println(creeperEntity.getTarget());
-    }
 
-    public static void onAffectWorld(Explosion explosion, @Nullable Entity entity, World world, BlockPos blockPos, BlockState blockState) {
-        if (world.isClient) {
-            return;
-        }
+    public static void onAffectWorld(@Nullable Entity entity, World world, BlockPos blockPos, BlockState blockState) {
+        if (world.isClient) return;
+
         if (entity instanceof CreeperEntity creeper) {
             LivingEntity livingEntity = creeper.getTarget();
             if (livingEntity instanceof PlayerEntity player) {
                 insertBlock(player, blockPos,blockState ,world,BlockActionType.EXPLODE);
             }
         }
+        if(blockState.getBlock().getDefaultState().getBlock().equals(Blocks.TNT)) return; //tnt就不记录e
+        if (entity instanceof TrackServerPlayerExt trackServerPlayerExt && !blockState.getBlock().equals(Blocks.FIRE) ) {
+            //todo 关闭服务器或区块卸载无法保存追踪的玩家对象
+            ServerPlayerEntity serverPlayer = trackServerPlayerExt.getMclogTrackPlayer();
+            if (serverPlayer != null) {
+                insertBlock(serverPlayer, blockPos,blockState ,world,BlockActionType.EXPLODE);
+            }
+        }
     }
+
 }

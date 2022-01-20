@@ -32,16 +32,18 @@ public abstract class HoeItemMixin {
 		p	1			droppedItem
 			c	the item to drop
 		p	0			result
-			c	the tilled block state
+	e		c	the tilled block state
      */
-    @Inject(method = "method_36984", at = @At("HEAD"))
+    @SuppressWarnings("all")
+    // @Inject(method = "method_36984", at = @At("HEAD"))
 
     private static void logCreateTillAction(BlockState blockState, ItemUsageContext context, CallbackInfo ci) {
         MCLogCore.hoeItemUserOnBlock(blockState,context);
 
     }
-     @Inject(method = "method_36986", at = @At("HEAD"))
 
+    @SuppressWarnings("all")
+     @Inject(method = "method_36986", at = @At("HEAD"))
     private static void logCreateTillAndDropAction(BlockState blockState, ItemConvertible itemConvertible, ItemUsageContext context, CallbackInfo ci) {
         //rooted dirt
         MCLogCore.hoeItemUserOnBlock(blockState, context);

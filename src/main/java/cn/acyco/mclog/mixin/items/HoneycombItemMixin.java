@@ -34,6 +34,7 @@ public abstract class HoneycombItemMixin {
 		p	1			block
     * */
 
+    @SuppressWarnings("all")
     @ModifyArgs(method = "method_34719",at=@At(
             value = "INVOKE",
             target = "Lnet/minecraft/world/World;setBlockState(Lnet/minecraft/util/math/BlockPos;Lnet/minecraft/block/BlockState;I)Z"

@@ -489,4 +489,22 @@ public class MCLogCore {
         }
     }
 
+    public static void fireBlockTryRemoveBlockOrTrySetBlockState(World world, BlockPos pos, ServerPlayerEntity player) {
+        igniteBlock(world, pos,world.getBlockState(pos), player);
+
+    }
+
+    public static void igniteTnt(BlockState state, World world, BlockPos pos, PlayerEntity player) {
+        if(player instanceof ServerPlayerEntity serverPlayer)
+            igniteBlock(world, pos, state,serverPlayer);
+    }
+
+    private static void igniteBlock(World world, BlockPos pos, BlockState blockState, ServerPlayerEntity player) {
+        if (world.isClient) {
+            return;
+        }
+        insertBlock(player, pos, world.getBlockState(pos), world, BlockActionType.IGNITE); //点燃
+    }
+
+
 }

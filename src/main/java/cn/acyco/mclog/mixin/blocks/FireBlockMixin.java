@@ -1,11 +1,13 @@
-package cn.acyco.mclog.mixin;
+package cn.acyco.mclog.mixin.blocks;
 
+import cn.acyco.mclog.core.MCLogCore;
 import cn.acyco.mclog.ext.TrackServerPlayerExt;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.FireBlock;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.math.BlockPos;
+import net.minecraft.world.World;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -35,6 +37,7 @@ public abstract class FireBlockMixin {
         }
 
     }
+
     @Inject(method = "scheduledTick", at = @At(
             value = "INVOKE",
             target = "Lnet/minecraft/server/world/ServerWorld;setBlockState(Lnet/minecraft/util/math/BlockPos;Lnet/minecraft/block/BlockState;I)Z",
@@ -45,5 +48,23 @@ public abstract class FireBlockMixin {
             return;
         }
         ((TrackServerPlayerExt) state).setMclogTrackPlayer(player);
+    }
+
+
+    @Inject(method = "trySpreadingFire", at = @At(
+            value = "INVOKE",
+            target = "Lnet/minecraft/world/World;removeBlock(Lnet/minecraft/util/math/BlockPos;Z)Z",
+            shift = At.Shift.BEFORE
+    ))
+    private void tryRemoveBlock(World world, BlockPos pos, int spreadFactor, Random rand, int currentAge, CallbackInfo ci) {
+        MCLogCore.fireBlockTryRemoveBlockOrTrySetBlockState( world, pos,player);
+    }
+    @Inject(method = "trySpreadingFire", at = @At(
+            value = "INVOKE",
+            target = "Lnet/minecraft/world/World;setBlockState(Lnet/minecraft/util/math/BlockPos;Lnet/minecraft/block/BlockState;I)Z",
+            shift = At.Shift.BEFORE
+    ))
+    private void trySetBlockState(World world, BlockPos pos, int spreadFactor, Random rand, int currentAge, CallbackInfo ci) {
+        MCLogCore.fireBlockTryRemoveBlockOrTrySetBlockState( world, pos,player);
     }
 }

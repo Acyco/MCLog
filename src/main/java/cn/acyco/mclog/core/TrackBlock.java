@@ -11,8 +11,9 @@ import java.util.HashSet;
  * @create 2022-01-14 18:22
  * @url https://acyco.cn
  */
-public class InteractionBlockGroup {
+public class TrackBlock {
     public static HashSet<String> BUTTON = new HashSet<>();
+
 
     public static void init() {
         //button

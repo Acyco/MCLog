@@ -277,8 +277,12 @@ public class MCLogCore {
      * @param blockState 方块状态
      * @param world      世界
      */
-    public static void onBlockBroken(DefaultedList<ItemStack> saveItemStack, ServerPlayerEntity player, BlockPos pos, BlockState blockState, ServerWorld world) {
-        insertBlock(player, pos, blockState, world, BlockActionType.BREAK);
+    public static void onBlockBreak(DefaultedList<ItemStack> saveItemStack, ServerPlayerEntity player, BlockPos pos, BlockState blockState, ServerWorld world) {
+
+        insertBlock(player, pos, blockState, world, BlockActionType.BREAK);//玩家打掉的方块
+        doBlockSideBreak(player,pos,blockState,world);
+
+        //方块实体里面的物品
         if(saveItemStack == null) return;
         for (ItemStack itemStack : saveItemStack) {
             if (!itemStack.isEmpty()) {
@@ -287,6 +291,21 @@ public class MCLogCore {
             }
         }
             //System.out.println(blockEntity.);
+
+    }
+    private static void doBlockSideBreak( ServerPlayerEntity player, BlockPos pos, BlockState blockState, ServerWorld world) {
+        //bamboo
+        Block block = blockState.getBlock();
+        if (block.equals(Blocks.BAMBOO)) {
+            BlockState upBlockState = null;
+            BlockPos upPos = pos.up();
+            while ((upBlockState = world.getBlockState(upPos)).getBlock().equals(Blocks.BAMBOO)) {
+                insertBlock(player, upPos, upBlockState, world, BlockActionType.BREAK);
+                upPos = upPos.up();
+            }
+        }
+
+
 
     }
 
@@ -309,7 +328,7 @@ public class MCLogCore {
                 if (!beforeState.getFluidState().isEmpty() && (blockState.contains(Properties.WATERLOGGED) && !blockState.get(Properties.WATERLOGGED))) { // 放置前的方块是流体(水或岩浆)，放置后不是含水，!isWaterlogged(blockState)
                     System.out.println("remove fluid");
 
-                    onBlockBroken(null, (ServerPlayerEntity) player, blockPos, blockItemExt.getBeforeFluidState().getBlockState(), (ServerWorld) context.getWorld());
+                    onBlockBreak(null, (ServerPlayerEntity) player, blockPos, blockItemExt.getBeforeFluidState().getBlockState(), (ServerWorld) context.getWorld());
                     blockItemExt.setBeforeState(null); //处理完重置为null
                 }
             }
@@ -401,7 +420,7 @@ public class MCLogCore {
     public static void onUse(World world, PlayerEntity player, Hand hand, BlockHitResult hit, AbstractBlock.AbstractBlockState abstractBlockState) {
         if (abstractBlockState instanceof AbstractBlockStateExt abstractBlockStateExt) {
             BlockPos blockPos = hit.getBlockPos();
-           if(abstractBlockState.getBlock() instanceof ChestBlock)
+           if(!(abstractBlockState.getBlock() instanceof ChestBlock))
             insertBlock(player,blockPos, abstractBlockStateExt.getBeforeBlockState(), world, BlockActionType.CLICK);
         }
     }

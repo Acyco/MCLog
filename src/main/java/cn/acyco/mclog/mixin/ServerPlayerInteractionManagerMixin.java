@@ -57,7 +57,7 @@ public abstract class ServerPlayerInteractionManagerMixin {
             )
     )
     private void onBlockBroken(BlockPos pos, CallbackInfoReturnable<Boolean> cir, BlockState blockState, BlockEntity blockEntity, Block block, boolean bl) {
-        MCLogCore.onBlockBroken(this.saveItemStack,player, pos, blockState,this.world);
+        MCLogCore.onBlockBreak(this.saveItemStack,player, pos, blockState,this.world);
         this.saveItemStack = null;
     }
 

@@ -7,10 +7,12 @@ import cn.acyco.mclog.ext.BlockItemExt;
 import cn.acyco.mclog.ext.BucketItemBeforeExt;
 import cn.acyco.mclog.ext.TrackServerPlayerExt;
 import net.minecraft.block.AbstractBlock;
+import net.minecraft.block.BedBlock;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
 import net.minecraft.block.ChestBlock;
+import net.minecraft.block.enums.BedPart;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.damage.DamageSource;
@@ -35,6 +37,7 @@ import net.minecraft.util.WorldSavePath;
 import net.minecraft.util.collection.DefaultedList;
 import net.minecraft.util.hit.BlockHitResult;
 import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.Direction;
 import net.minecraft.util.registry.Registry;
 import net.minecraft.world.World;
 import org.apache.logging.log4j.LogManager;
@@ -69,6 +72,7 @@ public class MCLogCore {
         System.out.println("mc server loaded");
         try {
             server = minecraftServer;
+            TrackBlock.init();
             config = Config.loadConfig();
             SqliteHelper.createTables();
             init();
@@ -100,11 +104,12 @@ public class MCLogCore {
             } catch (SQLException e) {
                 e.printStackTrace();
             }
-                SqliteHelper.connection = null;
-                SqliteHelper.databaseFile = null;
+            SqliteHelper.connection = null;
+            SqliteHelper.databaseFile = null;
 
         }
     }
+
     public static File getPathFile(String name) {
         return server.getSavePath(WorldSavePath.ROOT).resolve(name).toFile();
     }
@@ -271,31 +276,32 @@ public class MCLogCore {
 
     /**
      * 方块破坏事件
-     *  @param saveItemStack 破坏前的容器里面的物品
-     * @param player     玩家
-     * @param pos        方块位置
-     * @param blockState 方块状态
-     * @param world      世界
+     *
+     * @param saveItemStack 破坏前的容器里面的物品
+     * @param player        玩家
+     * @param pos           方块位置
      */
-    public static void onBlockBreak(DefaultedList<ItemStack> saveItemStack, ServerPlayerEntity player, BlockPos pos, BlockState blockState, ServerWorld world) {
-
-        insertBlock(player, pos, blockState, world, BlockActionType.BREAK);//玩家打掉的方块
-        doBlockSideBreak(player,pos,blockState,world);
-
+    public static void onBlockBroken(DefaultedList<ItemStack> saveItemStack, ServerPlayerEntity player, BlockPos pos) {
         //方块实体里面的物品
-        if(saveItemStack == null) return;
+        if (saveItemStack == null) return;
         for (ItemStack itemStack : saveItemStack) {
             if (!itemStack.isEmpty()) {
                 insertContainer(pos, player, itemStack, 0);// action 0 remove
-
             }
         }
-            //System.out.println(blockEntity.);
+    }
+
+    public static void onBlockBreak(ServerPlayerEntity player, BlockPos pos, BlockState blockState, ServerWorld world) {
+
+        insertBlock(player, pos, blockState, world, BlockActionType.BREAK);//玩家打掉的方块
+        doBlockSideBreak(player, pos, blockState, world);
 
     }
-    private static void doBlockSideBreak( ServerPlayerEntity player, BlockPos pos, BlockState blockState, ServerWorld world) {
+
+    private static void doBlockSideBreak(ServerPlayerEntity player, BlockPos pos, BlockState blockState, ServerWorld world) {
         //bamboo
         Block block = blockState.getBlock();
+        System.out.println("MCLogCore.doBlockSideBreak");
         if (block.equals(Blocks.BAMBOO)) {
             BlockState upBlockState = null;
             BlockPos upPos = pos.up();
@@ -303,12 +309,16 @@ public class MCLogCore {
                 insertBlock(player, upPos, upBlockState, world, BlockActionType.BREAK);
                 upPos = upPos.up();
             }
+        } else if (TrackBlock.contains(TrackBlock.BED, block)) {
+            BedPart bedPart = blockState.get(BedBlock.PART);
+            Direction blockDirection = blockState.get(BedBlock.FACING);
+            Direction direction = bedPart == BedPart.FOOT ? blockDirection : blockDirection.getOpposite();
+            BlockPos anotherPos = pos.offset(direction);
+            insertBlock(player, anotherPos, world.getBlockState(anotherPos), world, BlockActionType.BREAK);
         }
 
 
-
     }
-
 
     /**
      * 方块放置事件
@@ -323,16 +333,32 @@ public class MCLogCore {
             PlayerEntity player = context.getPlayer();
             BlockItemExt blockItemExt = (BlockItemExt) blockItem;
             BlockState beforeState = blockItemExt.getBeforeState();
-            if (beforeState != null) {
-                //System.out.println(beforeState.getFluidState().getFluid());
-                if (!beforeState.getFluidState().isEmpty() && (blockState.contains(Properties.WATERLOGGED) && !blockState.get(Properties.WATERLOGGED))) { // 放置前的方块是流体(水或岩浆)，放置后不是含水，!isWaterlogged(blockState)
-                    System.out.println("remove fluid");
+            World world = context.getWorld();
+            insertBlock(player, blockPos, blockState, world, BlockActionType.PLACE);
+            doBlockSidePlace(beforeState,blockState,player,blockPos,blockItemExt,world);
+        }
+    }
 
-                    onBlockBreak(null, (ServerPlayerEntity) player, blockPos, blockItemExt.getBeforeFluidState().getBlockState(), (ServerWorld) context.getWorld());
-                    blockItemExt.setBeforeState(null); //处理完重置为null
-                }
+
+    private static void doBlockSidePlace(BlockState beforeState, BlockState blockState, PlayerEntity player, BlockPos blockPos, BlockItemExt blockItemExt, World world) {
+        if (beforeState != null) {
+            //System.out.println(beforeState.getFluidState().getFluid());
+            if (!beforeState.getFluidState().isEmpty() && (blockState.contains(Properties.WATERLOGGED) && !blockState.get(Properties.WATERLOGGED))) { // 放置前的方块是流体(水或岩浆)，放置后不是含水，!isWaterlogged(blockState)
+                System.out.println("remove fluid");
+
+                onBlockBreak((ServerPlayerEntity) player, blockPos, blockItemExt.getBeforeFluidState().getBlockState(), (ServerWorld) world);
+                blockItemExt.setBeforeState(null); //处理完重置为null
             }
-            insertBlock(player, blockPos, blockState, context.getWorld(), BlockActionType.PLACE);
+        }
+        Block block = blockState.getBlock();
+        //bed
+        if (TrackBlock.contains(TrackBlock.BED, block)) {
+            BedPart bedPart = blockState.get(BedBlock.PART);
+            Direction blockDirection = blockState.get(BedBlock.FACING);
+            Direction direction = bedPart == BedPart.FOOT ? blockDirection : blockDirection.getOpposite();
+            BlockPos anotherPos = blockPos.offset(direction);
+            insertBlock(player, anotherPos, world.getBlockState(anotherPos), world, BlockActionType.PLACE);
+
         }
     }
 
@@ -420,8 +446,8 @@ public class MCLogCore {
     public static void onUse(World world, PlayerEntity player, Hand hand, BlockHitResult hit, AbstractBlock.AbstractBlockState abstractBlockState) {
         if (abstractBlockState instanceof AbstractBlockStateExt abstractBlockStateExt) {
             BlockPos blockPos = hit.getBlockPos();
-           if(!(abstractBlockState.getBlock() instanceof ChestBlock))
-            insertBlock(player,blockPos, abstractBlockStateExt.getBeforeBlockState(), world, BlockActionType.CLICK);
+            if (!(abstractBlockState.getBlock() instanceof ChestBlock))
+                insertBlock(player, blockPos, abstractBlockStateExt.getBeforeBlockState(), world, BlockActionType.CLICK);
         }
     }
 
@@ -477,6 +503,7 @@ public class MCLogCore {
         insertBlock(context.getPlayer(), pos, beforeState, world, BlockActionType.BREAK); //先移除
         insertBlock(context.getPlayer(), pos, AfterState, world, BlockActionType.PLACE); //后添加
     }
+
     public static void hoeItemUserOnBlock(BlockState AfterState, ItemUsageContext context) {
         World world = context.getWorld();
         if (world.isClient) {
@@ -495,27 +522,27 @@ public class MCLogCore {
         if (entity instanceof CreeperEntity creeper) {
             LivingEntity livingEntity = creeper.getTarget();
             if (livingEntity instanceof PlayerEntity player) {
-                insertBlock(player, blockPos,blockState ,world,BlockActionType.EXPLODE);
+                insertBlock(player, blockPos, blockState, world, BlockActionType.EXPLODE);
             }
         }
-        if(blockState.getBlock().getDefaultState().getBlock().equals(Blocks.TNT)) return; //tnt就不记录e
-        if (entity instanceof TrackServerPlayerExt trackServerPlayerExt && !blockState.getBlock().equals(Blocks.FIRE) ) {
+        if (blockState.getBlock().getDefaultState().getBlock().equals(Blocks.TNT)) return; //tnt就不记录e
+        if (entity instanceof TrackServerPlayerExt trackServerPlayerExt && !blockState.getBlock().equals(Blocks.FIRE)) {
             //todo 关闭服务器或区块卸载无法保存追踪的玩家对象
             ServerPlayerEntity serverPlayer = trackServerPlayerExt.getMclogTrackPlayer();
             if (serverPlayer != null) {
-                insertBlock(serverPlayer, blockPos,blockState ,world,BlockActionType.EXPLODE);
+                insertBlock(serverPlayer, blockPos, blockState, world, BlockActionType.EXPLODE);
             }
         }
     }
 
     public static void fireBlockTryRemoveBlockOrTrySetBlockState(World world, BlockPos pos, ServerPlayerEntity player) {
-        igniteBlock(world, pos,world.getBlockState(pos), player);
+        igniteBlock(world, pos, world.getBlockState(pos), player);
 
     }
 
     public static void igniteTnt(BlockState state, World world, BlockPos pos, PlayerEntity player) {
-        if(player instanceof ServerPlayerEntity serverPlayer)
-            igniteBlock(world, pos, state,serverPlayer);
+        if (player instanceof ServerPlayerEntity serverPlayer)
+            igniteBlock(world, pos, state, serverPlayer);
     }
 
     private static void igniteBlock(World world, BlockPos pos, BlockState blockState, ServerPlayerEntity player) {

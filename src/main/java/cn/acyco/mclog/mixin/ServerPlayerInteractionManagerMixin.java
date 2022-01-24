@@ -52,12 +52,25 @@ public abstract class ServerPlayerInteractionManagerMixin {
             locals = LocalCapture.CAPTURE_FAILEXCEPTION,
             at = @At(
                     value = "INVOKE",
+                    target = "Lnet/minecraft/block/Block;onBreak(Lnet/minecraft/world/World;Lnet/minecraft/util/math/BlockPos;Lnet/minecraft/block/BlockState;Lnet/minecraft/entity/player/PlayerEntity;)V",
+                    shift = At.Shift.BEFORE
+            ))
+
+    private void onRemoveBlock(BlockPos pos, CallbackInfoReturnable<Boolean> cir, BlockState blockState, BlockEntity blockEntity, Block block) {
+        MCLogCore.onBlockBreak(player, pos,blockState,this.world);
+    }
+
+    @Inject(method = "tryBreakBlock",
+            locals = LocalCapture.CAPTURE_FAILEXCEPTION,
+            at = @At(
+                    value = "INVOKE",
                     target = "Lnet/minecraft/block/Block;onBroken(Lnet/minecraft/world/WorldAccess;Lnet/minecraft/util/math/BlockPos;Lnet/minecraft/block/BlockState;)V",
                     shift = At.Shift.BEFORE
             )
     )
     private void onBlockBroken(BlockPos pos, CallbackInfoReturnable<Boolean> cir, BlockState blockState, BlockEntity blockEntity, Block block, boolean bl) {
-        MCLogCore.onBlockBreak(this.saveItemStack,player, pos, blockState,this.world);
+
+        MCLogCore.onBlockBroken(this.saveItemStack, player, pos);
         this.saveItemStack = null;
     }
 

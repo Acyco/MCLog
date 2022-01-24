@@ -28,7 +28,7 @@ import org.spongepowered.asm.mixin.injection.callback.LocalCapture;
  * @create 2022-01-01 15:51
  * @url https://acyco.cn
  */
-@Mixin(value = ServerPlayerInteractionManager.class,priority = 233)
+@Mixin(value = ServerPlayerInteractionManager.class)
 public abstract class ServerPlayerInteractionManagerMixin {
     @Shadow @Final protected ServerPlayerEntity player;
 

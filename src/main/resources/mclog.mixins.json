@@ -10,23 +10,23 @@
     "ChunkSectionMixin",
     "EntityMixin",
     "ExplosionMixin",
-    "blocks.FireBlockMixin",
     "MinecraftServerMixin",
     "PlayerManagerMixin",
     "ScreenHandlerMixin",
     "ServerPlayerEntityMixin",
     "ServerPlayerInteractionManagerMixin",
     "SlotMixin",
+    "blocks.FireBlockMixin",
     "blocks.TntBlockMixin",
     "items.AxeItemMixin",
     "items.BucketItemMixin",
+    "items.FireChargeItemMixin",
     "items.FlintAndSteelItemMixin",
     "items.HoeItemMixin",
     "items.HoneycombItemMixin",
     "items.ShovelItemMixin"
   ],
   "client": [
-
   ],
   "injectors": {
     "defaultRequire": 1

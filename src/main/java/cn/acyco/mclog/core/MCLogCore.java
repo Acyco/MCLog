@@ -2,25 +2,25 @@ package cn.acyco.mclog.core;
 
 import cn.acyco.mclog.config.Config;
 import cn.acyco.mclog.database.SqliteHelper;
+import cn.acyco.mclog.enums.BlockActionType;
 import cn.acyco.mclog.ext.AbstractBlockStateExt;
 import cn.acyco.mclog.ext.BlockItemExt;
 import cn.acyco.mclog.ext.BucketItemBeforeExt;
 import cn.acyco.mclog.ext.TrackServerPlayerExt;
 import cn.acyco.mclog.model.BlockModel;
+import cn.acyco.mclog.utils.TrackBlockUtil;
 import net.minecraft.block.AbstractBlock;
 import net.minecraft.block.BedBlock;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
 import net.minecraft.block.ChestBlock;
-import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.block.enums.BedPart;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.damage.DamageSource;
 import net.minecraft.entity.mob.CreeperEntity;
 import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.inventory.Inventory;
 import net.minecraft.item.BlockItem;
 import net.minecraft.item.BucketItem;
 import net.minecraft.item.Item;
@@ -282,12 +282,12 @@ public class MCLogCore {
 
     public static void onBlockBreakBefore(ServerPlayerEntity player, BlockPos pos, BlockState blockState, ServerWorld world, LinkedHashSet<BlockModel> trackBlocks) {
         trackBlocks.clear();
-        trackUp(world, trackBlocks, pos);
-        trackUp(world, trackBlocks, pos.west());
-        trackUp(world, trackBlocks, pos.east());
-        trackUp(world, trackBlocks, pos.down());
-        trackUp(world, trackBlocks, pos.north());
-        trackUp(world, trackBlocks, pos.south());
+        TrackBlockUtil.trackUp(world, trackBlocks, pos);
+        TrackBlockUtil.trackUp(world, trackBlocks, pos.west());
+        TrackBlockUtil.trackUp(world, trackBlocks, pos.east());
+        TrackBlockUtil.trackUp(world, trackBlocks, pos.down());
+        TrackBlockUtil.trackUp(world, trackBlocks, pos.north());
+        TrackBlockUtil.trackUp(world, trackBlocks, pos.south());
 
     }
 
@@ -296,17 +296,15 @@ public class MCLogCore {
             BlockPos blockPos = trackBlock.getBlockPos();
             BlockState oldState = trackBlock.getBlockState();
             BlockState newState= world.getBlockState(blockPos);
-
             if (!newState.equals(oldState)) {
                 if (newState.getBlock().equals(Blocks.AIR)) {
                     insertBlock(player, blockPos, oldState, world, BlockActionType.BREAK);
                 } else {
+                    //状态不一样就替换 （先移除再添加）
                     insertBlock(player, blockPos, oldState, world, BlockActionType.BREAK);
                     insertBlock(player, blockPos, newState, world, BlockActionType.PLACE);
                 }
-                System.out.println();
                 DefaultedList<ItemStack> inventory = trackBlock.getInventory();
-
                 if (null != inventory) {
                     for (ItemStack itemStack : inventory) {
                         if (!itemStack.isEmpty()) {
@@ -319,28 +317,6 @@ public class MCLogCore {
 
     }
 
-    private static void trackUp(ServerWorld world, LinkedHashSet<BlockModel>  trackBlocks, final BlockPos upPos) {
-        BlockPos pos = upPos;
-        BlockState upBlockState;
-        int count=0;
-        while (!((upBlockState = world.getBlockState(pos)).getBlock().equals(Blocks.AIR))&& count <384) {
-            BlockModel model = new BlockModel();
-            model.setBlockPos(pos);
-            model.setBlockState(upBlockState);
-            BlockEntity blockEntity = world.getBlockEntity(pos);
-            if (blockEntity instanceof Inventory inventory) {
-                DefaultedList<ItemStack> itemStacks = DefaultedList.ofSize(inventory.size(), ItemStack.EMPTY);
-                for (int i = 0; i < inventory.size(); i++) {
-                    itemStacks.set(i, inventory.getStack(i).copy()); //一定要用copy() 才能保存
-                }
-                model.setInventory(itemStacks);
-            }
-
-            trackBlocks.add(model);
-            pos = pos.up();
-            count++;
-        }
-    }
 
 
     /**

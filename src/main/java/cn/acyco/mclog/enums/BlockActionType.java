@@ -1,4 +1,4 @@
-package cn.acyco.mclog.core;
+package cn.acyco.mclog.enums;
 
 /**
  * @author Acyco

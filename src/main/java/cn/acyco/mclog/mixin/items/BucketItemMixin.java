@@ -1,6 +1,6 @@
 package cn.acyco.mclog.mixin.items;
 
-import cn.acyco.mclog.core.BlockActionType;
+import cn.acyco.mclog.enums.BlockActionType;
 import cn.acyco.mclog.core.MCLogCore;
 import cn.acyco.mclog.ext.BucketItemBeforeExt;
 import cn.acyco.mclog.ext.BucketItemExt;

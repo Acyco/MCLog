@@ -1,17 +1,17 @@
 package cn.acyco.mclog.mixin;
 
 import cn.acyco.mclog.core.MCLogCore;
+import cn.acyco.mclog.model.BlockModel;
+import com.google.common.collect.Sets;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.entity.BlockEntity;
-import net.minecraft.inventory.Inventory;
 import net.minecraft.item.ItemStack;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.network.ServerPlayerInteractionManager;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.ActionResult;
 import net.minecraft.util.Hand;
-import net.minecraft.util.collection.DefaultedList;
 import net.minecraft.util.hit.BlockHitResult;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
@@ -23,6 +23,8 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 import org.spongepowered.asm.mixin.injection.callback.LocalCapture;
 
+import java.util.LinkedHashSet;
+
 /**
  * @author Acyco
  * @create 2022-01-01 15:51
@@ -31,22 +33,9 @@ import org.spongepowered.asm.mixin.injection.callback.LocalCapture;
 @Mixin(value = ServerPlayerInteractionManager.class)
 public abstract class ServerPlayerInteractionManagerMixin {
     @Shadow @Final protected ServerPlayerEntity player;
-
     @Shadow protected ServerWorld world;
-    private DefaultedList<ItemStack> saveItemStack = null;
+    private LinkedHashSet<BlockModel> trackBlocks = Sets.newLinkedHashSet(); //
 
-    @Inject(method = "tryBreakBlock", at = @At("HEAD"))
-
-    private void onTryBreakBlock(BlockPos pos, CallbackInfoReturnable<Boolean> cir) {
-        BlockEntity blockEntity = this.world.getBlockEntity(pos);
-        if (blockEntity instanceof Inventory) {
-            Inventory inventory = (Inventory) blockEntity;
-            saveItemStack = DefaultedList.ofSize(inventory.size(), ItemStack.EMPTY);
-            for (int i = 0; i < inventory.size(); i++) {
-                saveItemStack.set(i, inventory.getStack(i).copy()); //一定要用copy() 才能保存
-            }
-        }
-    }
 
     @Inject(method = "tryBreakBlock",
             locals = LocalCapture.CAPTURE_FAILEXCEPTION,
@@ -56,22 +45,13 @@ public abstract class ServerPlayerInteractionManagerMixin {
                     shift = At.Shift.BEFORE
             ))
 
-    private void onRemoveBlock(BlockPos pos, CallbackInfoReturnable<Boolean> cir, BlockState blockState, BlockEntity blockEntity, Block block) {
-        MCLogCore.onBlockBreak(player, pos,blockState,this.world);
+    private void onBreakBlockBefore(BlockPos pos, CallbackInfoReturnable<Boolean> cir, BlockState blockState, BlockEntity blockEntity, Block block) {
+        MCLogCore.onBlockBreakBefore(player, pos,blockState,this.world,trackBlocks);
     }
 
-    @Inject(method = "tryBreakBlock",
-            locals = LocalCapture.CAPTURE_FAILEXCEPTION,
-            at = @At(
-                    value = "INVOKE",
-                    target = "Lnet/minecraft/block/Block;onBroken(Lnet/minecraft/world/WorldAccess;Lnet/minecraft/util/math/BlockPos;Lnet/minecraft/block/BlockState;)V",
-                    shift = At.Shift.BEFORE
-            )
-    )
-    private void onBlockBroken(BlockPos pos, CallbackInfoReturnable<Boolean> cir, BlockState blockState, BlockEntity blockEntity, Block block, boolean bl) {
-
-        MCLogCore.onBlockBroken(this.saveItemStack, player, pos);
-        this.saveItemStack = null;
+    @Inject(method = "tryBreakBlock",locals = LocalCapture.CAPTURE_FAILEXCEPTION,at = @At("RETURN"))
+    private void onBreakBlockAfter(BlockPos pos, CallbackInfoReturnable<Boolean> cir, BlockState blockState) {
+        MCLogCore.onBlockBreakAfter(player,this.world,trackBlocks);
     }
 
     @Inject(method = "interactBlock",require = 0,cancellable = true, at = @At("RETURN"))

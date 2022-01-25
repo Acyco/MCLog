@@ -12,12 +12,20 @@ import java.util.HashSet;
  * @url https://acyco.cn
  */
 public class TrackBlock {
+    public static HashSet<String> TOP_TRACK = new HashSet<>();
     public static HashSet<String> BUTTON = new HashSet<>();
     public static HashSet<String> BED = new HashSet<>();
+    public static HashSet<String> RAIL = new HashSet<>();
 
 
 
     public static void init() {
+        //top
+        TOP_TRACK.add(register(Blocks.BAMBOO));
+        TOP_TRACK.add(register(Blocks.TORCH));
+
+        TOP_TRACK.add(register(Blocks.POWERED_RAIL));
+
         //button
         BUTTON.add(register(Blocks.STONE_BUTTON));
         BUTTON.add(register(Blocks.OAK_BUTTON));
@@ -46,6 +54,12 @@ public class TrackBlock {
         BED.add(register(Blocks.RED_BED));
         BED.add(register(Blocks.WHITE_BED));
         BED.add(register(Blocks.YELLOW_BED));
+
+        // rails
+        RAIL.add(register(Blocks.RAIL));
+        RAIL.add(register(Blocks.ACTIVATOR_RAIL));
+        RAIL.add(register(Blocks.DETECTOR_RAIL));
+        RAIL.add(register(Blocks.POWERED_RAIL));
 
 
     }
